@@ -29,7 +29,12 @@ export function Navbar() {
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-12">
-        <a href="#topo" className="font-display text-xl tracking-wide text-ink">
+        <a
+          href="#topo"
+          className={`font-display text-xl tracking-wide transition-colors duration-500 ${
+            scrolled ? 'text-ink' : 'text-ivory'
+          }`}
+        >
           Karla Angel <span className="text-gold">Joias</span>
         </a>
 
@@ -38,7 +43,9 @@ export function Navbar() {
             <li key={l.href}>
               <a
                 href={l.href}
-                className="group relative text-[13px] font-medium uppercase tracking-[0.14em] text-ink/80 transition-colors hover:text-ink"
+                className={`group relative text-[13px] font-medium uppercase tracking-[0.14em] transition-colors duration-500 ${
+                  scrolled ? 'text-ink/80 hover:text-ink' : 'text-ivory/85 hover:text-ivory'
+                }`}
               >
                 {l.label}
                 <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-gold transition-all duration-300 group-hover:w-full" />
@@ -53,7 +60,7 @@ export function Navbar() {
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram Karla Angel Joias"
-            className="text-ink/70 transition-colors hover:text-gold"
+            className={`transition-colors duration-500 hover:text-gold ${scrolled ? 'text-ink/70' : 'text-ivory/80'}`}
           >
             <InstagramIcon size={18} />
           </a>
@@ -61,14 +68,16 @@ export function Navbar() {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noreferrer"
-            className="rounded-full border border-ink/15 px-5 py-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-all hover:border-gold hover:bg-ink hover:text-ivory"
+            className={`rounded-full border px-5 py-2 text-[13px] font-semibold uppercase tracking-[0.1em] transition-all duration-500 hover:border-gold hover:bg-gold hover:text-ink ${
+              scrolled ? 'border-ink/15 text-ink' : 'border-ivory/35 text-ivory'
+            }`}
           >
             Fale conosco
           </a>
         </div>
 
         <button
-          className="text-ink md:hidden"
+          className={`transition-colors duration-500 md:hidden ${scrolled ? 'text-ink' : 'text-ivory'}`}
           onClick={() => setOpen(true)}
           aria-label="Abrir menu"
         >
