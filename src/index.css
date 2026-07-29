@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta — "Ourivesaria contemporânea": verde-joia profundo + ouro envelhecido + marfim */
+  --color-ink: #0e2118;        /* verde quase-preto, base da marca */
+  --color-ink-soft: #16301f;   /* verde para superfícies elevadas sobre ink */
+  --color-ivory: #f6f2e8;      /* marfim, fundo claro */
+  --color-ivory-dim: #ece5d4;  /* marfim levemente mais escuro, para cards */
+  --color-gold: #c89a4c;       /* ouro envelhecido, accent principal */
+  --color-gold-bright: #e3c27e;/* ouro claro, hover/brilho */
+  --color-garnet: #7c2f34;     /* granada — accent secundário, contraste quente */
+  --color-charcoal: #201d18;   /* texto sobre marfim */
+
+  --font-display: "Fraunces", "Iowan Old Style", serif;
+  --font-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+
+  --animate-shimmer: shimmer 2.6s linear infinite;
+  --animate-draw: draw 1.4s ease forwards;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background-color: var(--color-ivory);
+  color: var(--color-charcoal);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-gold);
+  color: var(--color-ink);
+}
+
+/* foco visível acessível, discreto e alinhado à marca */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-gradient-gold {
+  background: linear-gradient(90deg, #a87c34, #e3c27e 45%, #a87c34);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.shimmer-bg {
+  background-image: linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%);
+  background-size: 200% 100%;
+}

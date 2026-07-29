@@ -1,0 +1,46 @@
+name: Deploy Karla Angel Joias
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build de produção
+        run: npm run build
+
+      # Requer os secrets abaixo configurados em:
+      # Settings > Secrets and variables > Actions do repositório
+      #   DEPLOY_HOST      -> 159.65.167.133
+      #   DEPLOY_USER      -> usuário SSH (ex: root ou deploy)
+      #   DEPLOY_SSH_KEY   -> chave privada SSH (par da chave autorizada no servidor)
+      - name: Enviar build para o servidor
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -az --delete
+          path: dist/
+          remote_path: /var/www/karlaangeljoias/dist/
+          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_user: ${{ secrets.DEPLOY_USER }}
+          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Recarregar Nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: sudo nginx -t && sudo systemctl reload nginx
