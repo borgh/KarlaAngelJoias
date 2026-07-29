@@ -27,84 +27,65 @@ npm run preview   # serve o build de produção localmente
 
 ## Deploy na Digital Ocean (159.65.167.133)
 
-O servidor já hospeda outro site, **fusionbeef.com.br** — os passos
-abaixo criam uma configuração totalmente isolada para
-**karlaangeljoias.com.br**, sem alterar nada do site existente.
+⚠️ **Importante — arquitetura real deste servidor**: ele já hospeda o
+site **fusionbeef.com.br**, implantado via **Kamal** (ferramenta de
+deploy da 37signals). Isso significa que **não há Nginx no host**
+controlando as portas 80/443 — quem ocupa essas portas é o container
+**`kamal-proxy`**, que roteia por domínio (Host header) para os
+containers corretos. O `nginx` do sistema está instalado mas inativo
+e não deve ser iniciado (entraria em conflito de porta com o Docker).
+
+Por isso, o site da Karla Angel é implantado como **mais um container
+Docker**, registrado no mesmo `kamal-proxy`, com service name e host
+próprios — totalmente isolado do `fusion-beef-web` e do `fusion-beef-db`.
+Os arquivos em `deploy/nginx/` (abordagem Nginx tradicional) **não se
+aplicam a este servidor** — ficam no repo só como referência caso o
+site seja implantado em outro ambiente sem Kamal.
 
 ### 1. DNS
 
-Aponte os registros do domínio `karlaangeljoias.com.br` (no seu
-provedor de DNS) para o servidor:
+Aponte os registros do domínio `karlaangeljoias.com.br` para o servidor:
 
 | Tipo | Nome | Valor            |
 |------|------|-------------------|
 | A    | @    | 159.65.167.133    |
 | A    | www  | 159.65.167.133    |
 
-### 2. Preparar diretório no servidor (uma vez só)
+### 2. Primeira instalação (uma vez só)
 
-Via SSH, como um usuário com sudo:
-
-```bash
-sudo mkdir -p /var/www/karlaangeljoias/dist
-sudo chown -R $USER:$USER /var/www/karlaangeljoias
-```
-
-Este diretório é exclusivo do novo site — em nenhum momento o deploy
-grava fora de `/var/www/karlaangeljoias/`.
-
-### 3. Instalar a configuração do Nginx (uma vez só)
+Via SSH no servidor:
 
 ```bash
-scp deploy/nginx/karlaangeljoias.com.br.conf SEU_USUARIO@159.65.167.133:/tmp/
-ssh SEU_USUARIO@159.65.167.133
-sudo mv /tmp/karlaangeljoias.com.br.conf /etc/nginx/sites-available/
-sudo ln -s /etc/nginx/sites-available/karlaangeljoias.com.br.conf /etc/nginx/sites-enabled/
-sudo nginx -t          # deve validar TODOS os sites, incluindo o fusionbeef, sem erro
-sudo systemctl reload nginx
+curl -fsSL https://raw.githubusercontent.com/borgh/KarlaAngelJoias/main/deploy/docker/setup.sh | bash
 ```
 
-`nginx -t` testa a configuração inteira do servidor (todos os domínios).
-Se o teste passar, nada foi quebrado — inclusive o fusionbeef continua
-servindo normalmente, já que seu arquivo em `sites-available/` não é
-tocado por esse processo.
+Esse script:
+1. Confirma que `kamal-proxy` e a rede Docker `kamal` existem (aborta se não existirem, sem alterar nada)
+2. Clona o repositório em `/var/www/karlaangeljoias/repo`
+3. Builda a imagem Docker do site (`deploy/docker/Dockerfile`, multi-stage: Node builda o Vite, Nginx alpine serve os arquivos)
+4. Sobe o container na rede `kamal` (a mesma do `fusion-beef-web`, só para o proxy conseguir rotear — os containers não se comunicam entre si)
+5. Registra a rota no `kamal-proxy` com `--host karlaangeljoias.com.br --host www.karlaangeljoias.com.br --tls` (certificado Let's Encrypt automático, emitido só para este host)
 
-### 4. Certificado SSL (uma vez só)
+O comando `kamal-proxy deploy` é *zero-downtime*: o proxy só troca o
+tráfego para o container novo depois que ele responde saudável em `/up`.
+
+### 3. Atualizações seguintes
 
 ```bash
-sudo certbot --nginx -d karlaangeljoias.com.br -d www.karlaangeljoias.com.br
+cd /var/www/karlaangeljoias/repo
+git pull
+bash deploy/docker/deploy.sh
 ```
 
-O Certbot identifica pelo `server_name` qual arquivo editar — ele mexe
-apenas em `karlaangeljoias.com.br.conf`, nunca no arquivo do fusionbeef.
-
-### 5. Deploy do site (toda vez que atualizar)
-
-Opção A — manual, da sua máquina:
-
-```bash
-DEPLOY_HOST=159.65.167.133 DEPLOY_USER=SEU_USUARIO ./deploy/deploy.sh
-```
-
-Opção B — automático via GitHub Actions: configure os secrets
-`DEPLOY_HOST`, `DEPLOY_USER` e `DEPLOY_SSH_KEY` no repositório
-(Settings → Secrets and variables → Actions) e todo push em `main`
-publica automaticamente (`.github/workflows/deploy.yml`).
+Ou automatize via GitHub Actions com um step de SSH que rode esse mesmo
+comando (`.github/workflows/deploy.yml` tem um exemplo baseado em rsync
+que pode ser adaptado para rodar `ssh ... 'cd ... && git pull && bash deploy/docker/deploy.sh'`).
 
 ### Checklist de segurança para não afetar o fusionbeef.com.br
 
-- [x] Root do site em diretório próprio: `/var/www/karlaangeljoias/`
-- [x] Arquivo de config Nginx próprio: `karlaangeljoias.com.br.conf`
-- [x] `server_name` específico — Nginx roteia por domínio, sem colisão
-- [x] Certbot cria certificado próprio para o novo domínio
-- [x] Deploy (`rsync --delete`) atua só dentro de `/var/www/karlaangeljoias/dist/`
-- [ ] Antes de rodar qualquer comando `sudo`, confirme com `nginx -T | grep server_name`
-      que os dois domínios aparecem listados corretamente
-
-## Stack
-
-- React 19 + TypeScript
-- Vite 8
-- Tailwind CSS v4 (tokens de marca em `src/index.css`)
-- Framer Motion (animações)
-- lucide-react (ícones)
+- [x] Container próprio (`karlaangeljoias-web-*`), nunca reaproveita ou reinicia o `fusion-beef-web`
+- [x] Service name próprio no kamal-proxy (`karlaangeljoias`), diferente de `fusion-beef-web`
+- [x] Host próprio (`karlaangeljoias.com.br`) — o kamal-proxy recusa (`Error: host is used by another service`) se algum dia tentar registrar um host que já pertence a outro serviço, então não há como sobrescrever o fusionbeef por acidente
+- [x] Certificado TLS próprio, emitido só para o novo host
+- [x] `docker rm`/`image prune` do script filtram por `--label app=karlaangeljoias`, nunca tocam em containers/imagens do fusionbeef
+- [ ] Antes de rodar o setup, confirme com `docker exec kamal-proxy kamal-proxy list` que `fusion-beef-web` aparece, para ter uma referência do estado "antes"
