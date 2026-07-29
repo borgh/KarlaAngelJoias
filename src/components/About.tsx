@@ -41,7 +41,7 @@ export function About() {
           <div className="grid grid-cols-3 gap-6 pt-4">
             {[
               ['+4.300', 'seguidoras no Instagram'],
-              ['18k', 'ouro e prata 925'],
+              ['423', 'peças e posts publicados'],
               ['100%', 'curadoria exclusiva'],
             ].map(([n, l]) => (
               <div key={l}>
