@@ -30,7 +30,7 @@ export function InstagramStrip() {
 
         <div className="mt-10 grid grid-cols-3 gap-3 sm:grid-cols-6">
           {hasRealItems
-            ? instagramItems.slice(0, 6).map((item, i) => (
+            ? instagramItems.map((item, i) => (
                 <motion.a
                   key={item.id}
                   href={item.linkUrl || instagramUrl}
