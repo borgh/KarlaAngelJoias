@@ -14,14 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
-# O --build-from-source do npm não teve efeito neste pacote — confirmado via
-# strace em produção que ele continuava carregando o binário pré-compilado
-# (node_modules/better-sqlite3/prebuilds/linux-x64.node), que trava com
-# Segmentation fault ao inicializar nesta versão exata do Node (incompatível
-# com esta build/host). Forçamos a compilação manual com node-gyp — quando
-# existe um build local em build/Release/, o carregador (node-gyp-build)
-# sempre prefere ele em vez do prebuild.
-RUN cd node_modules/better-sqlite3 && npx node-gyp rebuild
+# node-gyp puro não recompila de verdade (só faz "touch" nos stamps, sem
+# gerar o binário final) porque pula a etapa própria do pacote que prepara
+# o código-fonte do SQLite antes de compilar. "npm rebuild
+# --build-from-source" é o mecanismo correto e documentado do próprio
+# better-sqlite3 para isso — confirmado necessário via diagnóstico em
+# produção (o binário pré-compilado trava com SIGSEGV nesta versão do Node).
+RUN npm rebuild better-sqlite3 --build-from-source
 COPY src ./src
 
 # /data (banco SQLite) e /app/uploads (imagens) são montados como volumes
