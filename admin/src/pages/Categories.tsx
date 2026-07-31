@@ -4,7 +4,12 @@ import { api, ApiError } from '../lib/api'
 import type { Category } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 
-const GLYPHS = ['ring', 'necklace', 'earring', 'bracelet']
+const GLYPHS: { value: string; label: string }[] = [
+  { value: 'ring', label: 'Anel' },
+  { value: 'necklace', label: 'Colar' },
+  { value: 'earring', label: 'Brinco' },
+  { value: 'bracelet', label: 'Pulseira / Riviera' },
+]
 const EMPTY = { name: '', description: '', glyph: 'ring', sortOrder: 0 }
 
 export default function Categories() {
@@ -128,8 +133,8 @@ export default function Categories() {
                   className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
                 >
                   {GLYPHS.map((g) => (
-                    <option key={g} value={g}>
-                      {g}
+                    <option key={g.value} value={g.value}>
+                      {g.label}
                     </option>
                   ))}
                 </select>
