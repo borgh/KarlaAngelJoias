@@ -9,6 +9,7 @@ export type ProductView = {
   glyph: Glyph
   imageUrl?: string
   description?: string
+  isBestseller: boolean
 }
 
 export type CategoryView = {

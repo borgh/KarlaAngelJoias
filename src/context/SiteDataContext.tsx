@@ -42,6 +42,7 @@ const FALLBACK_PRODUCTS: ProductView[] = defaultProducts.map((p) => ({
   price: p.price,
   badge: p.badge,
   glyph: p.glyph,
+  isBestseller: true,
 }))
 
 export function SiteDataProvider({ children }: { children: ReactNode }) {
@@ -92,6 +93,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
               glyph: cat?.glyph || 'ring',
               imageUrl: p.imageUrl || undefined,
               description: p.description || undefined,
+              isBestseller: !!p.isBestseller,
             }
           })
         if (mapped.length > 0) setProducts(mapped)

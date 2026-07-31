@@ -10,7 +10,11 @@ const formatBRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export function BestSellers() {
-  const { products, content } = useSiteData()
+  const { products: allProducts, content } = useSiteData()
+  // Se nenhum produto foi marcado como "mais vendido" ainda no admin,
+  // mostra o catálogo geral em vez de deixar a seção vazia.
+  const bestsellers = allProducts.filter((p) => p.isBestseller)
+  const products = bestsellers.length > 0 ? bestsellers : allProducts
   const [selected, setSelected] = useState<ProductView | null>(null)
 
   return (
