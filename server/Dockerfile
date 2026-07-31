@@ -13,13 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY package*.json ./
-# Força compilar os módulos nativos (better-sqlite3) a partir do código-fonte
-# em vez de baixar um binário pré-compilado — evita incompatibilidade de ABI
-# entre o binário pronto e esta versão exata do Node, que causava
-# Segmentation fault ao abrir o banco (crash confirmado dentro do próprio
-# binário do node, não do SQLite — ver histórico de diagnóstico).
-ENV npm_config_build_from_source=true
-RUN npm ci --omit=dev --build-from-source
+RUN npm ci --omit=dev
+# O --build-from-source do npm não teve efeito neste pacote — confirmado via
+# strace em produção que ele continuava carregando o binário pré-compilado
+# (node_modules/better-sqlite3/prebuilds/linux-x64.node), que trava com
+# Segmentation fault ao inicializar nesta versão exata do Node (incompatível
+# com esta build/host). Forçamos a compilação manual com node-gyp — quando
+# existe um build local em build/Release/, o carregador (node-gyp-build)
+# sempre prefere ele em vez do prebuild.
+RUN cd node_modules/better-sqlite3 && npx node-gyp rebuild
 COPY src ./src
 
 # /data (banco SQLite) e /app/uploads (imagens) são montados como volumes
