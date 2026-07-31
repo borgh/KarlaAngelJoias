@@ -1,8 +1,15 @@
 # API Karla Angel Joias — Node + Express + SQLite (better-sqlite3)
-FROM node:20-alpine
+#
+# IMPORTANTE: usamos "bookworm-slim" (Debian/glibc), não "alpine" (musl).
+# O better-sqlite3 tem código nativo compilado, e binários pré-compilados
+# assumem glibc — em Alpine ele carrega sem erro (require funciona) mas
+# trava com "Segmentation fault" ao abrir o banco de verdade. Debian
+# evita essa classe inteira de bug.
+FROM node:20-bookworm-slim
 
-# better-sqlite3 precisa compilar código nativo
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package*.json ./
