@@ -47,7 +47,7 @@ placeholder para produtos que ainda não têm foto cadastrada no admin.
 
 - `src/` — site público (React + Vite), lê produtos/textos/carrossel da API em tempo real, com fallback para dados padrão se a API estiver fora do ar
 - `admin/` — painel administrativo (React + Vite), em `admin.karlaangeljoias.com.br`
-- `server/` — API (Node + Express + SQLite), usada pelos dois acima via proxy interno do Nginx de cada domínio (mesma origem, sem CORS em produção)
+- `server/` — API (Node + Express + armazenamento em arquivo JSON, sem dependências nativas compiladas), usada pelos dois acima via proxy interno do Nginx de cada domínio (mesma origem, sem CORS em produção)
 
 ## Painel administrativo
 
