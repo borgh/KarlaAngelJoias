@@ -1,11 +1,13 @@
 import { MessageCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { WHATSAPP_URL } from '../data/site'
+import { useSiteData } from '../context/SiteDataContext'
+import { buildWhatsappUrl } from '../data/site'
 
 export function WhatsAppFloat() {
+  const { content } = useSiteData()
   return (
     <motion.a
-      href={WHATSAPP_URL}
+      href={buildWhatsappUrl(content)}
       target="_blank"
       rel="noreferrer"
       aria-label="Falar no WhatsApp"

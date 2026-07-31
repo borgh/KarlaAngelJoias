@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion'
 import { ArrowDown } from 'lucide-react'
 import { JewelGlyph } from './JewelGlyph'
-import { WHATSAPP_URL } from '../data/site'
+import { useSiteData } from '../context/SiteDataContext'
+import { buildWhatsappUrl } from '../data/site'
 
 export function Hero() {
+  const { content } = useSiteData()
+  const whatsappUrl = buildWhatsappUrl(content)
   return (
     <section id="topo" className="relative overflow-hidden bg-ink text-ivory">
       {/* textura sutil de vinheta dourada */}
@@ -23,7 +26,7 @@ export function Hero() {
             transition={{ duration: 0.6 }}
             className="mb-6 text-[13px] font-semibold uppercase tracking-[0.28em] text-gold"
           >
-            Ouro 18k · Prata 925 · Moissanite
+            {content['hero.eyebrow']}
           </motion.p>
 
           <motion.h1
@@ -32,11 +35,11 @@ export function Hero() {
             transition={{ duration: 0.75, delay: 0.1 }}
             className="font-display text-[13vw] leading-[0.98] tracking-tight sm:text-6xl lg:text-[5.2rem]"
           >
-            Joias para
+            {content['hero.title_line1']}
             <br />
-            <span className="text-gradient-gold italic">o seu brilho</span>
+            <span className="text-gradient-gold italic">{content['hero.title_line2']}</span>
             <br />
-            de todo dia.
+            {content['hero.title_line3']}
           </motion.h1>
 
           <motion.p
@@ -45,10 +48,7 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.25 }}
             className="mt-8 max-w-md text-[15px] leading-relaxed text-ivory/70"
           >
-            Curadoria exclusiva de semijoias de luxo: ouro 18k, prata 925
-            e peças em moissanite, com o brilho e o acabamento de uma
-            joalheria — para usar todos os dias ou guardar para ocasiões
-            especiais.
+            {content['hero.subtitle']}
           </motion.p>
 
           <motion.div
@@ -64,7 +64,7 @@ export function Hero() {
               Ver coleção
             </a>
             <a
-              href={WHATSAPP_URL}
+              href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
               className="rounded-full border border-ivory/25 px-8 py-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-ivory transition-colors hover:border-gold hover:text-gold"

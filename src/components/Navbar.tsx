@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import { InstagramIcon } from './icons/InstagramIcon'
 import { motion, AnimatePresence } from 'framer-motion'
-import { WHATSAPP_URL, INSTAGRAM_URL } from '../data/site'
+import { useSiteData } from '../context/SiteDataContext'
+import { buildWhatsappUrl } from '../data/site'
 
 const LINKS = [
   { href: '#colecoes', label: 'Coleções' },
@@ -12,6 +13,9 @@ const LINKS = [
 ]
 
 export function Navbar() {
+  const { content } = useSiteData()
+  const whatsappUrl = buildWhatsappUrl(content)
+  const instagramUrl = content['contact.instagram_url']
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -56,7 +60,7 @@ export function Navbar() {
 
         <div className="hidden items-center gap-4 md:flex">
           <a
-            href={INSTAGRAM_URL}
+            href={instagramUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram Karla Angel Joias"
@@ -65,7 +69,7 @@ export function Navbar() {
             <InstagramIcon size={18} />
           </a>
           <a
-            href={WHATSAPP_URL}
+            href={whatsappUrl}
             target="_blank"
             rel="noreferrer"
             className={`rounded-full border px-5 py-2 text-[13px] font-semibold uppercase tracking-[0.1em] transition-all duration-500 hover:border-gold hover:bg-gold hover:text-ink ${
@@ -117,7 +121,7 @@ export function Navbar() {
                 </motion.li>
               ))}
               <a
-                href={WHATSAPP_URL}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-4 rounded-full bg-gold px-8 py-3 text-sm font-semibold uppercase tracking-[0.1em] text-ink"

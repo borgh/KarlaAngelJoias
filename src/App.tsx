@@ -1,3 +1,4 @@
+import { SiteDataProvider } from './context/SiteDataContext'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { ChainThread } from './components/ChainThread'
@@ -12,21 +13,23 @@ import { WhatsAppFloat } from './components/WhatsAppFloat'
 
 function App() {
   return (
-    <div className="font-body">
-      <ChainThread />
-      <Navbar />
-      <main>
-        <Hero />
-        <Categories />
-        <Benefits />
-        <BestSellers />
-        <About />
-        <InstagramStrip />
-        <Newsletter />
-      </main>
-      <Footer />
-      <WhatsAppFloat />
-    </div>
+    <SiteDataProvider>
+      <div className="font-body">
+        <ChainThread />
+        <Navbar />
+        <main>
+          <Hero />
+          <Categories />
+          <Benefits />
+          <BestSellers />
+          <About />
+          <InstagramStrip />
+          <Newsletter />
+        </main>
+        <Footer />
+        <WhatsAppFloat />
+      </div>
+    </SiteDataProvider>
   )
 }
 

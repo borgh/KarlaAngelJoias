@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
-import { products } from '../data/products'
 import { JewelGlyph } from './JewelGlyph'
-import { whatsappProductLink } from '../data/site'
+import { useSiteData } from '../context/SiteDataContext'
+import { buildWhatsappUrl } from '../data/site'
 
 const formatBRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export function BestSellers() {
+  const { products, content } = useSiteData()
+
   return (
     <section id="mais-vendidos" className="bg-ink px-6 py-24 text-ivory lg:px-12 lg:py-32">
       <div className="mx-auto max-w-7xl">
@@ -30,7 +32,8 @@ export function BestSellers() {
 
         <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
           {products.map((p, i) => {
-            const link = whatsappProductLink(
+            const link = buildWhatsappUrl(
+              content,
               `Olá! Tenho interesse na peça "${p.name}" (${formatBRL(p.price)}) que vi no site. Ainda está disponível?`
             )
             return (
@@ -48,13 +51,23 @@ export function BestSellers() {
                   </span>
                 )}
                 <div className="relative mb-5 flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink">
-                  <div className="shimmer-bg animate-shimmer absolute inset-0" />
-                  <JewelGlyph
-                    type={p.glyph}
-                    className="h-24 w-24 text-gold/80 transition-transform duration-500 group-hover:scale-110"
-                  />
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <>
+                      <div className="shimmer-bg animate-shimmer absolute inset-0" />
+                      <JewelGlyph
+                        type={p.glyph}
+                        className="h-24 w-24 text-gold/80 transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </>
+                  )}
                 </div>
-                <p className="text-[11px] uppercase tracking-[0.14em] text-ivory/45">{p.category}</p>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-ivory/45">{p.categoryName}</p>
                 <h3 className="font-display text-lg text-ivory">{p.name}</h3>
                 <p className="mt-1 text-gold">{formatBRL(p.price)}</p>
                 <a
@@ -70,9 +83,11 @@ export function BestSellers() {
           })}
         </div>
 
-        <p className="mt-8 text-center text-[12px] text-ivory/35">
-          Catálogo ilustrativo — fotos reais das peças em breve.
-        </p>
+        {products.every((p) => !p.imageUrl) && (
+          <p className="mt-8 text-center text-[12px] text-ivory/35">
+            Catálogo ilustrativo — fotos reais das peças em breve.
+          </p>
+        )}
       </div>
     </section>
   )

@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
-import { categories } from '../data/products'
+import { useSiteData } from '../context/SiteDataContext'
 import { JewelGlyph } from './JewelGlyph'
 
 export function Categories() {
+  const { categories } = useSiteData()
   return (
     <section id="colecoes" className="bg-ivory px-6 py-24 lg:px-12 lg:py-32">
       <div className="mx-auto max-w-7xl">
@@ -25,7 +26,7 @@ export function Categories() {
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-ink/10 sm:grid-cols-3 lg:grid-cols-5">
           {categories.map((c, i) => (
             <motion.a
-              key={c.name}
+              key={c.id}
               href="#mais-vendidos"
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}

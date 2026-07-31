@@ -8,3 +8,5 @@ dist-ssr
 !.env.example
 *.log
 npm-debug.log*
+server/data
+server/uploads

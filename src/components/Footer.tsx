@@ -1,8 +1,14 @@
 import { MessageCircle, Mail } from 'lucide-react'
 import { InstagramIcon } from './icons/InstagramIcon'
-import { WHATSAPP_URL, INSTAGRAM_URL, INSTAGRAM_HANDLE } from '../data/site'
+import { useSiteData } from '../context/SiteDataContext'
+import { buildWhatsappUrl } from '../data/site'
 
 export function Footer() {
+  const { content } = useSiteData()
+  const whatsappUrl = buildWhatsappUrl(content)
+  const instagramUrl = content['contact.instagram_url']
+  const instagramHandle = content['contact.instagram_handle']
+  const email = content['contact.email']
   return (
     <footer id="contato" className="bg-ivory px-6 pb-8 pt-20 lg:px-12">
       <div className="mx-auto max-w-7xl">
@@ -32,13 +38,13 @@ export function Footer() {
             </p>
             <ul className="space-y-3 text-[14px] text-ink/70">
               <li>
-                <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-gold">
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-gold">
                   <MessageCircle size={16} strokeWidth={1.5} /> WhatsApp
                 </a>
               </li>
               <li>
-                <a href="mailto:contato@karlaangeljoias.com.br" className="flex items-center gap-2 hover:text-gold">
-                  <Mail size={16} strokeWidth={1.5} /> contato@karlaangeljoias.com.br
+                <a href={`mailto:${email}`} className="flex items-center gap-2 hover:text-gold">
+                  <Mail size={16} strokeWidth={1.5} /> {email}
                 </a>
               </li>
             </ul>
@@ -48,8 +54,8 @@ export function Footer() {
             <p className="mb-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink/40">
               Redes sociais
             </p>
-            <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[14px] text-ink/70 hover:text-gold">
-              <InstagramIcon size={16} /> {INSTAGRAM_HANDLE}
+            <a href={instagramUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[14px] text-ink/70 hover:text-gold">
+              <InstagramIcon size={16} /> {instagramHandle}
             </a>
           </div>
         </div>
