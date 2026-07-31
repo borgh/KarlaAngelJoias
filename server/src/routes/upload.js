@@ -36,7 +36,7 @@ export const uploadRouter = Router()
 uploadRouter.post(
   '/',
   requireAuth,
-  requirePermission('can_create'),
+  requirePermission('canCreate'),
   (req, res) => {
     upload.single('file')(req, res, (err) => {
       if (err) return res.status(400).json({ error: err.message })
