@@ -8,6 +8,7 @@ import { buildWhatsappUrl } from '../data/site'
 const LINKS = [
   { href: '#colecoes', label: 'Coleções' },
   { href: '#mais-vendidos', label: 'Mais vendidos' },
+  { href: '#catalogo', label: 'Catálogo' },
   { href: '#historia', label: 'Nossa história' },
   { href: '#contato', label: 'Contato' },
 ]

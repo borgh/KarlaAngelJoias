@@ -5,6 +5,7 @@ import { ChainThread } from './components/ChainThread'
 import { Categories } from './components/Categories'
 import { Benefits } from './components/Benefits'
 import { BestSellers } from './components/BestSellers'
+import { Catalog } from './components/Catalog'
 import { About } from './components/About'
 import { InstagramStrip } from './components/InstagramStrip'
 import { Newsletter } from './components/Newsletter'
@@ -22,6 +23,7 @@ function App() {
           <Categories />
           <Benefits />
           <BestSellers />
+          <Catalog />
           <About />
           <InstagramStrip />
           <Newsletter />
