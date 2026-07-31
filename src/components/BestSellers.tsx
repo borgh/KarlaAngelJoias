@@ -1,13 +1,17 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { JewelGlyph } from './JewelGlyph'
+import { ProductModal } from './ProductModal'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildWhatsappUrl } from '../data/site'
+import type { ProductView } from '../lib/viewTypes'
 
 const formatBRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export function BestSellers() {
   const { products, content } = useSiteData()
+  const [selected, setSelected] = useState<ProductView | null>(null)
 
   return (
     <section id="mais-vendidos" className="bg-ink px-6 py-24 text-ivory lg:px-12 lg:py-32">
@@ -39,11 +43,20 @@ export function BestSellers() {
             return (
               <motion.div
                 key={p.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelected(p)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelected(p)
+                  }
+                }}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.55, delay: (i % 4) * 0.07 }}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-ivory/10 bg-ink-soft/60 p-5 transition-colors hover:border-gold/40"
+                className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-ivory/10 bg-ink-soft/60 p-5 text-left transition-colors hover:border-gold/40"
               >
                 {p.badge && (
                   <span className="absolute left-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink">
@@ -66,6 +79,9 @@ export function BestSellers() {
                       />
                     </>
                   )}
+                  <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[11px] font-semibold uppercase tracking-wide text-ivory opacity-0 backdrop-blur-0 transition-all duration-300 group-hover:bg-ink/40 group-hover:opacity-100 group-hover:backdrop-blur-[1px]">
+                    Ver detalhes
+                  </span>
                 </div>
                 <p className="text-[11px] uppercase tracking-[0.14em] text-ivory/45">{p.categoryName}</p>
                 <h3 className="font-display text-lg text-ivory">{p.name}</h3>
@@ -74,6 +90,7 @@ export function BestSellers() {
                   href={link}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
                   className="mt-4 rounded-full border border-ivory/20 py-2.5 text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-ivory transition-colors hover:border-gold hover:bg-gold hover:text-ink"
                 >
                   Comprar no WhatsApp
@@ -89,6 +106,19 @@ export function BestSellers() {
           </p>
         )}
       </div>
+
+      <ProductModal
+        product={selected}
+        whatsappUrl={
+          selected
+            ? buildWhatsappUrl(
+                content,
+                `Olá! Tenho interesse na peça "${selected.name}" (${formatBRL(selected.price)}) que vi no site. Ainda está disponível?`
+              )
+            : ''
+        }
+        onClose={() => setSelected(null)}
+      />
     </section>
   )
 }

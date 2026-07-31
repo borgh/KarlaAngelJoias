@@ -12,6 +12,7 @@ type ApiProduct = {
   price: number
   badge: string
   imageUrl: string
+  description: string
   isBestseller: boolean
   isActive: boolean
 }
@@ -90,6 +91,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
               badge: p.badge || undefined,
               glyph: cat?.glyph || 'ring',
               imageUrl: p.imageUrl || undefined,
+              description: p.description || undefined,
             }
           })
         if (mapped.length > 0) setProducts(mapped)
