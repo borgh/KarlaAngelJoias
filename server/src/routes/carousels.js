@@ -1,70 +1,56 @@
 import { Router } from 'express'
 import { nanoid } from 'nanoid'
-import { db } from '../db/index.js'
+import { store } from '../db/store.js'
 import { requireAuth, requirePermission } from '../auth.js'
 
 export const carouselRouter = Router()
 
-function serialize(row) {
-  return {
-    id: row.id,
-    carousel: row.carousel,
-    title: row.title,
-    subtitle: row.subtitle,
-    imageUrl: row.image_url,
-    linkUrl: row.link_url,
-    sortOrder: row.sort_order,
-    isActive: !!row.is_active,
-  }
-}
-
-// GET /api/carousels/:name — itens ativos de um carrossel específico (público)
 carouselRouter.get('/:name', (req, res) => {
-  const rows = db
-    .prepare('SELECT * FROM carousel_items WHERE carousel = ? AND is_active = 1 ORDER BY sort_order ASC')
-    .all(req.params.name)
-  res.json({ items: rows.map(serialize) })
+  const items = store.carouselItems
+    .filter((i) => i.carousel === req.params.name && i.isActive)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+  res.json({ items })
 })
 
-// GET /api/carousels/:name/admin — todos os itens (inclui inativos)
 carouselRouter.get('/:name/admin', requireAuth, (req, res) => {
-  const rows = db
-    .prepare('SELECT * FROM carousel_items WHERE carousel = ? ORDER BY sort_order ASC')
-    .all(req.params.name)
-  res.json({ items: rows.map(serialize) })
+  const items = store.carouselItems
+    .filter((i) => i.carousel === req.params.name)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+  res.json({ items })
 })
 
-carouselRouter.post('/:name/admin', requireAuth, requirePermission('can_create'), (req, res) => {
+carouselRouter.post('/:name/admin', requireAuth, requirePermission('canCreate'), (req, res) => {
   const { title, subtitle, imageUrl, linkUrl, sortOrder } = req.body || {}
-  const id = nanoid()
-  db.prepare(
-    `INSERT INTO carousel_items (id, carousel, title, subtitle, image_url, link_url, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, req.params.name, title || '', subtitle || '', imageUrl || '', linkUrl || '', Number(sortOrder) || 0)
-  const row = db.prepare('SELECT * FROM carousel_items WHERE id = ?').get(id)
-  res.status(201).json({ item: serialize(row) })
+  const item = store.carouselItems.insert({
+    id: nanoid(),
+    carousel: req.params.name,
+    title: title || '',
+    subtitle: subtitle || '',
+    imageUrl: imageUrl || '',
+    linkUrl: linkUrl || '',
+    sortOrder: Number(sortOrder) || 0,
+    isActive: true,
+  })
+  res.status(201).json({ item })
 })
 
-carouselRouter.put('/items/:id/admin', requireAuth, requirePermission('can_edit'), (req, res) => {
-  const existing = db.prepare('SELECT * FROM carousel_items WHERE id = ?').get(req.params.id)
+carouselRouter.put('/items/:id/admin', requireAuth, requirePermission('canEdit'), (req, res) => {
+  const existing = store.carouselItems.find((i) => i.id === req.params.id)
   if (!existing) return res.status(404).json({ error: 'Item não encontrado.' })
   const { title, subtitle, imageUrl, linkUrl, sortOrder, isActive } = req.body || {}
-  db.prepare(
-    `UPDATE carousel_items SET title=?, subtitle=?, image_url=?, link_url=?, sort_order=?, is_active=? WHERE id=?`
-  ).run(
-    title ?? existing.title,
-    subtitle ?? existing.subtitle,
-    imageUrl ?? existing.image_url,
-    linkUrl ?? existing.link_url,
-    sortOrder !== undefined ? Number(sortOrder) : existing.sort_order,
-    isActive !== undefined ? (isActive ? 1 : 0) : existing.is_active,
-    req.params.id
-  )
-  res.json({ item: serialize(db.prepare('SELECT * FROM carousel_items WHERE id = ?').get(req.params.id)) })
+  const item = store.carouselItems.update(req.params.id, {
+    title: title ?? existing.title,
+    subtitle: subtitle ?? existing.subtitle,
+    imageUrl: imageUrl ?? existing.imageUrl,
+    linkUrl: linkUrl ?? existing.linkUrl,
+    sortOrder: sortOrder !== undefined ? Number(sortOrder) : existing.sortOrder,
+    isActive: isActive !== undefined ? !!isActive : existing.isActive,
+  })
+  res.json({ item })
 })
 
-carouselRouter.delete('/items/:id/admin', requireAuth, requirePermission('can_delete'), (req, res) => {
-  const info = db.prepare('DELETE FROM carousel_items WHERE id = ?').run(req.params.id)
-  if (info.changes === 0) return res.status(404).json({ error: 'Item não encontrado.' })
+carouselRouter.delete('/items/:id/admin', requireAuth, requirePermission('canDelete'), (req, res) => {
+  const removed = store.carouselItems.remove(req.params.id)
+  if (!removed) return res.status(404).json({ error: 'Item não encontrado.' })
   res.json({ ok: true })
 })

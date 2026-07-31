@@ -1,22 +1,13 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { db } from '../db/index.js'
+import { store } from '../db/store.js'
 import { signToken, setAuthCookie, clearAuthCookie, requireAuth } from '../auth.js'
 
 export const authRouter = Router()
 
-function serializeUser(row) {
-  return {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    canCreate: !!row.can_create,
-    canEdit: !!row.can_edit,
-    canDelete: !!row.can_delete,
-    canManageUsers: !!row.can_manage_users,
-    isActive: !!row.is_active,
-    createdAt: row.created_at,
-  }
+function serializeUser(user) {
+  const { passwordHash, ...safe } = user
+  return safe
 }
 
 authRouter.post('/login', (req, res) => {
@@ -25,8 +16,9 @@ authRouter.post('/login', (req, res) => {
     return res.status(400).json({ error: 'Informe e-mail e senha.' })
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(String(email).toLowerCase().trim())
-  if (!user || !user.is_active || !bcrypt.compareSync(password, user.password_hash)) {
+  const normalizedEmail = String(email).toLowerCase().trim()
+  const user = store.users.find((u) => u.email === normalizedEmail)
+  if (!user || !user.isActive || !bcrypt.compareSync(password, user.passwordHash)) {
     return res.status(401).json({ error: 'E-mail ou senha inválidos.' })
   }
 
@@ -41,5 +33,5 @@ authRouter.post('/logout', (req, res) => {
 })
 
 authRouter.get('/me', requireAuth, (req, res) => {
-  res.json({ user: serializeUser(req.user) })
+  res.json({ user: req.user })
 })

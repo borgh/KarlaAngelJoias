@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { db } from './db/index.js'
+import { store } from './db/store.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
@@ -28,12 +28,10 @@ export function clearAuthCookie(res) {
 }
 
 function getUserSafe(id) {
-  return db
-    .prepare(
-      `SELECT id, name, email, can_create, can_edit, can_delete, can_manage_users, is_active, created_at
-       FROM users WHERE id = ?`
-    )
-    .get(id)
+  const user = store.users.find((u) => u.id === id)
+  if (!user) return null
+  const { passwordHash, ...safe } = user
+  return safe
 }
 
 // Exige um usuário autenticado e ativo. Anexa req.user.
@@ -43,7 +41,7 @@ export function requireAuth(req, res, next) {
   try {
     const payload = jwt.verify(token, JWT_SECRET)
     const user = getUserSafe(payload.sub)
-    if (!user || !user.is_active) {
+    if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Sessão inválida.' })
     }
     req.user = user
@@ -53,7 +51,7 @@ export function requireAuth(req, res, next) {
   }
 }
 
-// Exige uma permissão específica (can_create, can_edit, can_delete, can_manage_users).
+// Exige uma permissão específica (canCreate, canEdit, canDelete, canManageUsers).
 export function requirePermission(permission) {
   return (req, res, next) => {
     if (!req.user?.[permission]) {
