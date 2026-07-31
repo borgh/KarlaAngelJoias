@@ -13,7 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+# Força compilar os módulos nativos (better-sqlite3) a partir do código-fonte
+# em vez de baixar um binário pré-compilado — evita incompatibilidade de ABI
+# entre o binário pronto e esta versão exata do Node, que causava
+# Segmentation fault ao abrir o banco (crash confirmado dentro do próprio
+# binário do node, não do SQLite — ver histórico de diagnóstico).
+ENV npm_config_build_from_source=true
+RUN npm ci --omit=dev --build-from-source
 COPY src ./src
 
 # /data (banco SQLite) e /app/uploads (imagens) são montados como volumes
