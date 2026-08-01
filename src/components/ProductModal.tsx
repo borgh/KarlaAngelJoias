@@ -42,11 +42,9 @@ export function ProductModal({
               {product.imageUrl ? (
                 <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
               ) : (
-                <>
-                  <div className="shimmer-bg animate-shimmer absolute inset-0" />
-                  <JewelGlyph type={product.glyph} className="h-32 w-32 text-gold/80" />
-                </>
+                <JewelGlyph type={product.glyph} className="h-32 w-32 text-gold/80" />
               )}
+              <div className="shimmer-bg animate-shimmer pointer-events-none absolute inset-0" />
             </div>
 
             <div className="relative flex flex-col p-7 sm:p-8">

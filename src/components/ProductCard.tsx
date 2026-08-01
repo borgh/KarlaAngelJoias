@@ -46,14 +46,14 @@ export function ProductCard({
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <>
-            <div className="shimmer-bg animate-shimmer absolute inset-0" />
-            <JewelGlyph
-              type={product.glyph}
-              className="h-24 w-24 text-gold/80 transition-transform duration-500 group-hover:scale-110"
-            />
-          </>
+          <JewelGlyph
+            type={product.glyph}
+            className="h-24 w-24 text-gold/80 transition-transform duration-500 group-hover:scale-110"
+          />
         )}
+        {/* Brilho passando — presente tanto na foto real quanto no ícone
+            placeholder, simulando o reflexo de luz numa joia. */}
+        <div className="shimmer-bg animate-shimmer pointer-events-none absolute inset-0" />
         <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[11px] font-semibold uppercase tracking-wide text-ivory opacity-0 transition-all duration-300 group-hover:bg-ink/40 group-hover:opacity-100 group-hover:backdrop-blur-[1px]">
           Ver detalhes
         </span>
