@@ -1,10 +1,9 @@
 import type { CSSProperties } from 'react'
 
 // Gera um número pseudo-aleatório determinístico a partir de uma string
-// (o id do produto) — assim as estrelas ficam em posições fixas para
-// cada peça, em vez de "pular" de lugar a cada vez que o componente
-// re-renderiza.
-function seededRandom(seed: string, index: number) {
+// (o id do produto) — assim as estrelas (e o brilho) ficam com timing
+// fixo para cada peça, em vez de mudar a cada re-render.
+export function seededRandom(seed: string, index: number) {
   let h = 0
   const str = `${seed}-${index}`
   for (let i = 0; i < str.length; i++) {
@@ -14,7 +13,7 @@ function seededRandom(seed: string, index: number) {
   return Math.abs(h % 1000) / 1000
 }
 
-function StarShape({
+export function StarShape({
   size,
   className,
   style,
@@ -30,6 +29,21 @@ function StarShape({
         fill="currentColor"
       />
     </svg>
+  )
+}
+
+// Brilho diagonal com timing aleatório (mas estável) por produto — cada
+// peça "flasheia" em um momento diferente, então o brilho e as estrelas
+// nunca ficam todos sincronizados, dão a sensação de cintilar aleatório.
+export function Shimmer({ seed }: { seed: string }) {
+  const duration = 5 + seededRandom(seed, 90) * 4 // 5-9s de ciclo total
+  const delay = seededRandom(seed, 91) * 5 // início defasado
+
+  return (
+    <div
+      className="shimmer-bg pointer-events-none absolute inset-0"
+      style={{ animation: `shimmer ${duration}s ease-in-out ${delay}s infinite` }}
+    />
   )
 }
 

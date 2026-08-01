@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { JewelGlyph } from './JewelGlyph'
-import { Sparkles } from './Sparkles'
+import { Sparkles, Shimmer } from './Sparkles'
 import type { ProductView } from '../lib/viewTypes'
 
 const formatBRL = (v: number) =>
@@ -45,7 +45,7 @@ export function ProductModal({
               ) : (
                 <JewelGlyph type={product.glyph} className="h-32 w-32 text-gold/80" />
               )}
-              <div className="shimmer-bg animate-shimmer pointer-events-none absolute inset-0" />
+              <Shimmer seed={product.id} />
               <Sparkles seed={product.id} count={7} />
             </div>
 

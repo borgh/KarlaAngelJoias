@@ -19,7 +19,8 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%, 78% { background-position: -200% 0; }
+  90% { background-position: 200% 0; }
   100% { background-position: 200% 0; }
 }
 
