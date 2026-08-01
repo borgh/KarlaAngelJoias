@@ -80,4 +80,5 @@ body {
 .shimmer-bg {
   background-image: linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%);
   background-size: 200% 100%;
+  background-repeat: no-repeat;
 }
