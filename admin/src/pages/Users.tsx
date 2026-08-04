@@ -107,8 +107,8 @@ export default function Users() {
       {loading ? (
         <p className="text-ink/50">Carregando…</p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-ink/10 bg-white">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-ivory-dim text-[12px] uppercase tracking-wide text-ink/50">
               <tr>
                 <th className="px-5 py-3">Nome</th>
