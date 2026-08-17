@@ -192,15 +192,21 @@ export function CameraTab() {
     const diameterMm = fingerWidthPx / pxPerMm
     const circumferenceMm = diameterMm * Math.PI
 
-    if (
-      !Number.isFinite(diameterMm) ||
-      diameterMm <= 0 ||
-      !photoSize.w ||
-      circumferenceMm < MIN_CIRCUMFERENCE_MM ||
-      circumferenceMm > MAX_CIRCUMFERENCE_MM
-    ) {
+    if (!Number.isFinite(diameterMm) || diameterMm <= 0 || !photoSize.w) {
       setErrorMsg(
-        'O resultado ficou fora da faixa comum de anéis — confira se o retângulo do cartão e as alcinhas do dedo estão bem posicionados, ou tire outra foto.'
+        'Não deu pra calcular a partir dessa foto — confira se o quadro do cartão e as alcinhas do dedo estão bem posicionados.'
+      )
+      return
+    }
+
+    if (circumferenceMm < MIN_CIRCUMFERENCE_MM || circumferenceMm > MAX_CIRCUMFERENCE_MM) {
+      const tooSmall = circumferenceMm < MIN_CIRCUMFERENCE_MM
+      setErrorMsg(
+        `O valor calculado (${circumferenceMm.toFixed(0)}mm de circunferência) ficou ${tooSmall ? 'menor' : 'maior'} do que qualquer anel comum. ` +
+          (tooSmall
+            ? 'As alcinhas provavelmente estão perto demais uma da outra, ou o quadro do cartão está maior do que o cartão de verdade na foto.'
+            : 'As alcinhas provavelmente estão longe demais uma da outra, ou o quadro do cartão está menor do que o cartão de verdade na foto.') +
+          ' Confira também se as duas bolinhas estão mesmo em cima de um dedo esticado e visível — não sobre a palma ou fora da mão.'
       )
       return
     }
@@ -224,10 +230,42 @@ export function CameraTab() {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
         <SparklesIcon className="text-gold" size={28} />
+
+        {/* Diagrama esquemático — vista de CIMA da mão numa mesa, não
+            a palma virada de frente pra câmera (erro comum: segurar a
+            mão levantada olhando pro celular, em vez de deitar a mão
+            e fotografar de cima olhando pra baixo). */}
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-ivory/10 bg-ink-soft/40 px-6 py-5">
+          <svg width="180" height="140" viewBox="0 0 180 140" className="text-ivory/70">
+            {/* mesa */}
+            <rect x="4" y="4" width="172" height="132" rx="10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.4" />
+            {/* mão espalmada, vista de cima */}
+            <g stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none">
+              <path d="M60 100 Q55 60 60 40" />
+              <path d="M75 100 Q72 45 76 22" />
+              <path d="M90 100 Q90 42 90 20" />
+              <path d="M105 100 Q108 45 104 25" />
+              <path d="M120 100 Q126 65 118 48" />
+              <path d="M55 100 Q90 118 125 100" />
+            </g>
+            {/* cartão ao lado de um dedo */}
+            <rect x="66" y="52" width="18" height="30" rx="2" fill="#C89A4C" opacity="0.85" />
+            {/* câmera acima, olhando pra baixo */}
+            <g transform="translate(90, 8)">
+              <circle r="6" fill="none" stroke="#C89A4C" strokeWidth="2" />
+              <path d="M0 6 L0 14" stroke="#C89A4C" strokeWidth="2" />
+            </g>
+          </svg>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gold">
+            Câmera de cima olhando pra baixo — não a palma de frente pro celular
+          </p>
+        </div>
+
         <p className="max-w-sm text-[14px] text-ivory/70">
-          Coloque a mão espalmada sobre uma mesa, com um <strong className="text-ivory">cartão de crédito/débito</strong> encostado
-          ao lado do dedo — os dois na mesma superfície. Nossa IA acompanha sua mão em tempo real e avisa assim que
-          conseguir localizar; você só confirma o ajuste fino depois.
+          Deite a mão numa mesa, <strong className="text-ivory">com a palma pra cima e os dedos esticados</strong>{' '}
+          (não dobrados), e fotografe de cima olhando pra baixo — como no desenho acima. Encoste um{' '}
+          <strong className="text-ivory">cartão de crédito/débito</strong> ao lado do dedo, na mesma mesa. Nossa IA
+          acompanha sua mão em tempo real e avisa assim que conseguir localizar.
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {(Object.keys(FINGER_LABEL) as Finger[]).map((f) => (
@@ -316,7 +354,8 @@ export function CameraTab() {
           </div>
         </div>
         <p className="max-w-xs text-center text-[12px] text-ivory/50">
-          Encaixe o cartão dentro da guia tracejada e mantenha a mão espalmada visível
+          Dedos esticados, palma pra cima, câmera de cima olhando pra baixo. Encaixe o cartão dentro da guia
+          tracejada
           {!handDetected && ' — aguarde o indicador ficar verde antes de capturar.'}
         </p>
         {errorMsg && <p className="text-[13px] text-garnet">{errorMsg}</p>}
