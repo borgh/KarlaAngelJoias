@@ -7,6 +7,7 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 ## 2026-08-17
 
 ### Fixed
+- Banner de instalar o PWA não aparecia na tela de login — só existia na área autenticada (dentro do `Layout`). Adicionado também em `Login.tsx`, posicionado no topo sem deslocar a centralização do formulário. `[efa00a6]`
 - Convite pra instalar o PWA (`InstallPwaButton`) ficava escondido dentro do menu lateral/gaveta — no celular, ninguém via sem abrir o menu por conta própria. Adicionado `InstallPwaBanner`, visível direto no topo da tela principal só no celular. Lógica de detecção extraída pra um hook compartilhado (`usePwaInstall.ts`). Testado simulando o evento `beforeinstallprompt` em 3 cenários (Android, iOS, Desktop). `[cb24c6c]`
 - Tela de Notificações (e outras 5 telas do admin) travava em "Carregando..." indefinidamente depois de um deploy — causa dupla: service worker do PWA servia JS antigo em cache pra navegação (corrigido com `NetworkFirst` só na navegação), e as funções de carregamento de dados não garantiam `setLoading(false)` em caso de erro (corrigido com `try/finally` em todas). `[b0d4857]`
 - Documentação completa do sistema criada em `docs/`, mesmo padrão do VBMA — arquitetura, API, telas, funcionalidades, variáveis de ambiente e troubleshooting. `[538bea3]`

@@ -84,3 +84,5 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 **Solução**: lógica de detecção extraída pra um hook compartilhado (`admin/src/lib/usePwaInstall.ts`) — única fonte de verdade, já que o evento `beforeinstallprompt` só dispara uma vez e não pode ser "escutado" por dois componentes de forma independente sem risco de comportamento inconsistente. Novo componente `InstallPwaBanner`, visível direto no topo da tela principal (não dentro de menu nenhum), só no celular. Testado simulando o evento `beforeinstallprompt` via `page.evaluate()` (o Chrome headless não dispara esse evento sozinho, mesmo com todos os critérios de instalabilidade satisfeitos) em 3 cenários — Android/Chrome, iOS/Safari e Desktop.
 
+**Segunda parte do mesmo problema**: o banner só existia dentro do `Layout` (área autenticada) — um visitante olhando a tela de login pela primeira vez nunca via a opção de instalar. Adicionado também em `admin/src/pages/Login.tsx` (posicionado `absolute` no topo, pra não deslocar a centralização vertical do formulário). Instalar o app não deveria depender de já ter feito login.
+
