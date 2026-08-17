@@ -118,6 +118,20 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 ---
 
+## Alça de girar o cartão, movida pra baixo, saiu da área clicável
+
+**Problema**: a pedido, movi a alça de girar o quadro do cartão de cima pra baixo (não atrapalhar mais as bolinhas de ajuste do dedo, que ficam acima) — mas depois de mover, a alça parou de responder a clique inteiramente.
+
+**Causa**: o container da foto tinha `overflow-hidden` (pra cortar os cantos arredondados da imagem). A alça, agora posicionada abaixo do quadro do cartão, passou a ficar fora dos limites desse container — `overflow-hidden` corta tanto a exibição visual quanto a interatividade do que está fora dele, então a alça ficava invisível **e** inclicável ao mesmo tempo. O clique "vazava" pro elemento seguinte da página (a caixa de instruções abaixo da foto).
+
+**Solução**: separar as duas responsabilidades em divs diferentes — uma div interna, só em volta da `<img>`, com `overflow-hidden` (corta os cantos arredondados da foto); e a div externa (que serve de referência de posição em porcentagem pros controles — cartão, alcinhas) sem nenhum corte, deixando qualquer controle que "vaze" pra fora dos limites visuais da foto continuar visível e clicável.
+
+**Lição de processo**: ao mover qualquer controle interativo posicionado por porcentagem, checar se o novo lugar ainda cai dentro dos limites do container de referência — principalmente se esse container tiver `overflow-hidden`. Confirmado com o mesmo processo rigoroso de sempre (simular arrastar de verdade com Playwright, não só cliques).
+
+---
+
+
+
 ## Botão de instalar o PWA "não aparecia" no celular
 
 **Problema**: o convite pra instalar o painel como app existia no código (`InstallPwaButton`), mas o pedido foi verificar se ele realmente aparecia sempre que o app não estava instalado — e não aparecia, na prática.
