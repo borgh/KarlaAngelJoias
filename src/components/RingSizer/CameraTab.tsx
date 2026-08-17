@@ -395,16 +395,18 @@ function FingerHandles({
     <div
       ref={containerRef}
       className="absolute inset-0 touch-none"
+      style={{ pointerEvents: 'none' }}
       onPointerMove={handlePointerMove}
       onPointerUp={() => (draggingHandle.current = null)}
     >
+      {/* linha horizontal conectando as duas alças */}
       <div
         onPointerDown={(e) => {
           draggingHandle.current = 'line'
           ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
         }}
         className="absolute h-0.5 cursor-ns-resize bg-red-400"
-        style={{ left: `${left * 100}%`, right: `${(1 - right) * 100}%`, top: `${y * 100}%` }}
+        style={{ left: `${left * 100}%`, right: `${(1 - right) * 100}%`, top: `${y * 100}%`, pointerEvents: 'auto' }}
       />
       {[
         { key: 'left' as const, x: left },
@@ -417,7 +419,7 @@ function FingerHandles({
             ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
           }}
           className="absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-red-400 bg-red-400/40"
-          style={{ left: `${h.x * 100}%`, top: `${y * 100}%` }}
+          style={{ left: `${h.x * 100}%`, top: `${y * 100}%`, pointerEvents: 'auto' }}
         />
       ))}
     </div>
