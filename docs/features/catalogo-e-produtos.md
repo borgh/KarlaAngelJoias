@@ -1,0 +1,26 @@
+# Catálogo e produtos (site público)
+
+## Onde fica o código
+
+- `src/context/SiteDataContext.tsx` — busca produtos/categorias/conteúdo/carrossel da API uma vez, com fallback pros dados estáticos de `src/data/products.ts` e `src/data/site.ts` se a API estiver fora do ar.
+- `src/components/ProductCard.tsx` — card reutilizável (usado tanto em "Mais vendidos" quanto em "Catálogo completo").
+- `src/components/ProductModal.tsx` — modal de detalhes, abre ao clicar em qualquer card.
+- `src/components/BestSellers.tsx` — seção "Mais vendidos".
+- `src/components/Catalog.tsx` — seção "Catálogo completo", com filtro por categoria.
+
+## Duas seções, dois propósitos
+
+- **Mais vendidos** (`#mais-vendidos`): só produtos com `isBestseller: true`. Se **nenhum** produto estiver marcado (catálogo novo, por exemplo), cai automaticamente pro catálogo geral em vez de mostrar uma seção vazia (ver `products.filter((p) => p.isBestseller)`, com fallback em `BestSellers.tsx`).
+- **Catálogo completo** (`#catalogo`): **todos** os produtos ativos, com abas de filtro por categoria geradas dinamicamente (só aparecem categorias que realmente têm produto).
+
+Isso existe porque, originalmente, produtos sem a marcação "mais vendido" não apareciam em lugar nenhum do site — bug real relatado e corrigido (ver `CHANGELOG.md`, e-mail commit "adiciona seção Catálogo Completo").
+
+## Modal de detalhes
+
+Clicar em qualquer card (não só o botão de comprar) abre um modal com imagem grande, categoria, preço, descrição completa e botão de WhatsApp. O clique no botão "Comprar no WhatsApp" dentro do card usa `stopPropagation()` pra não abrir o modal por engano.
+
+Acessibilidade: o card não é um `<button>` de verdade (teria um link `<a>` de WhatsApp aninhado dentro, inválido em HTML) — é uma `<div role="button" tabIndex={0}>` com `onKeyDown` tratando Enter/Espaço.
+
+## Sem descrição cadastrada
+
+Se o produto não tem `description` preenchida no admin, o modal mostra um texto padrão convidando a falar no WhatsApp — nunca fica em branco.

@@ -2,7 +2,10 @@
 
 Site institucional/catálogo da Karla Angel, semijoias de luxo (ouro 18k,
 prata 925 e moissanite). React + Vite + TypeScript + Tailwind CSS v4 +
-Framer Motion.
+Framer Motion. Inclui painel administrativo completo (produtos, estoque,
+notificações multi-canal, PWA) em `admin.karlaangeljoias.com.br`.
+
+📚 **Documentação completa em [`docs/README.md`](./docs/README.md)** — arquitetura, API, telas do admin, funcionalidades complexas explicadas, variáveis de ambiente, e troubleshooting de problemas reais já resolvidos. Histórico de mudanças em [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Rodando localmente
 
