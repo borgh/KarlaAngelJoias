@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Ruler } from 'lucide-react'
 import { InstagramIcon } from './icons/InstagramIcon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildWhatsappUrl } from '../data/site'
+import { RingSizerModal } from './RingSizer/RingSizerModal'
 
 const LINKS = [
   { href: '#colecoes', label: 'Coleções' },
@@ -19,6 +20,7 @@ export function Navbar() {
   const instagramUrl = content['contact.instagram_url']
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [ringSizerOpen, setRingSizerOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -60,6 +62,14 @@ export function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-4 md:flex">
+          <button
+            onClick={() => setRingSizerOpen(true)}
+            className={`flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-[0.1em] transition-colors duration-500 hover:text-gold ${
+              scrolled ? 'text-ink/80' : 'text-ivory/85'
+            }`}
+          >
+            <Ruler size={15} /> Guia de medidas
+          </button>
           <a
             href={instagramUrl}
             target="_blank"
@@ -121,6 +131,15 @@ export function Navbar() {
                   </a>
                 </motion.li>
               ))}
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  setRingSizerOpen(true)
+                }}
+                className="flex items-center gap-2 font-display text-3xl text-ivory"
+              >
+                <Ruler size={22} /> Guia de medidas
+              </button>
               <a
                 href={whatsappUrl}
                 target="_blank"
@@ -133,6 +152,8 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <RingSizerModal open={ringSizerOpen} onClose={() => setRingSizerOpen(false)} />
     </header>
   )
 }

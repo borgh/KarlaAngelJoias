@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X, Ruler } from 'lucide-react'
 import { JewelGlyph } from './JewelGlyph'
 import { Sparkles, Shimmer } from './Sparkles'
 import { getStockLabel } from '../lib/stockLabel'
+import { RingSizerModal } from './RingSizer/RingSizerModal'
 import type { ProductView } from '../lib/viewTypes'
 
 const formatBRL = (v: number) =>
@@ -17,6 +19,7 @@ export function ProductModal({
   whatsappUrl: string
   onClose: () => void
 }) {
+  const [ringSizerOpen, setRingSizerOpen] = useState(false)
   return (
     <AnimatePresence>
       {product && (() => {
@@ -107,11 +110,22 @@ export function ProductModal({
                   Comprar no WhatsApp
                 </a>
               )}
+
+              {product.glyph === 'ring' && (
+                <button
+                  onClick={() => setRingSizerOpen(true)}
+                  className="mt-3 flex items-center justify-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink/50 hover:text-garnet"
+                >
+                  <Ruler size={13} /> Não sabe seu tamanho? Descubra aqui
+                </button>
+              )}
             </div>
           </motion.div>
         </motion.div>
         )
       })()}
+
+      <RingSizerModal open={ringSizerOpen} onClose={() => setRingSizerOpen(false)} />
     </AnimatePresence>
   )
 }
