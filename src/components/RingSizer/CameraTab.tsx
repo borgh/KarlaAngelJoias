@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, RotateCcw, Sparkles as SparklesIcon } from 'lucide-react'
+import { Camera, CheckCircle2, RotateCcw, Smartphone, Sparkles as SparklesIcon } from 'lucide-react'
 import { getHandLandmarker, HAND_LANDMARKS } from '../../lib/handLandmarker'
 import { CARD_WIDTH_MM, CARD_HEIGHT_MM } from '../../lib/useCardCalibration'
 import { diameterToResult, MIN_CIRCUMFERENCE_MM, MAX_CIRCUMFERENCE_MM } from '../../lib/ringSizeChart'
 import { RingSizeResultCard } from './RingSizeResultCard'
+import type { HandLandmarkerResult } from '@mediapipe/tasks-vision'
 
 type Stage = 'intro' | 'requesting' | 'live' | 'error' | 'captured'
 type Finger = 'index' | 'middle' | 'ring' | 'pinky'
@@ -21,19 +22,36 @@ const FINGER_LABEL: Record<Finger, string> = {
   pinky: 'Mindinho',
 }
 
+// Região do guia de cartão mostrado na câmera ao vivo — as mesmas
+// coordenadas são usadas como posição INICIAL do retângulo de
+// calibração depois de capturar a foto. Já que a pessoa foi
+// instruída a encaixar o cartão real bem ali, começar o ajuste
+// exatamente nessa posição (em vez de um valor genérico no centro) é
+// um "auto-posicionamento" confiável sem precisar de detecção de
+// objeto por IA — aproveita a própria instrução dada ao usuário.
+const CARD_GUIDE = {
+  x: 0.25,
+  width: 0.5,
+  bottom: 0.1,
+}
+const CARD_GUIDE_HEIGHT = CARD_GUIDE.width * (CARD_HEIGHT_MM / CARD_WIDTH_MM)
+const CARD_GUIDE_TOP = 1 - CARD_GUIDE.bottom - CARD_GUIDE_HEIGHT
+
 export function CameraTab() {
   const [stage, setStage] = useState<Stage>('intro')
   const [errorMsg, setErrorMsg] = useState('')
   const [finger, setFinger] = useState<Finger>('ring')
-  const [modelLoading, setModelLoading] = useState(false)
+  const [handDetected, setHandDetected] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const rafRef = useRef<number | null>(null)
+  const lastResultRef = useRef<HandLandmarkerResult | null>(null)
 
   const [photoUrl, setPhotoUrl] = useState('')
   const [photoSize, setPhotoSize] = useState({ w: 0, h: 0 })
-  const [cardRect, setCardRect] = useState({ x: 0.3, y: 0.65, w: 0.35 })
+  const [cardRect, setCardRect] = useState({ x: CARD_GUIDE.x, y: CARD_GUIDE_TOP, w: CARD_GUIDE.width })
   const [fingerHandles, setFingerHandles] = useState({ left: 0.42, right: 0.58, y: 0.3 })
   const [autoDetected, setAutoDetected] = useState(false)
   const [result, setResult] = useState<ReturnType<typeof diameterToResult> | null>(null)
@@ -41,26 +59,57 @@ export function CameraTab() {
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop())
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [])
 
   // O elemento <video> só existe no DOM quando stage === 'live' — se
   // tentássemos conectar o stream nele durante a espera de permissão
-  // (stage === 'requesting'), o elemento ainda nem existiria ainda
-  // (videoRef.current seria null), e o vídeo nunca receberia o stream
-  // de verdade (bug real encontrado em teste: videoWidth ficava 0
-  // pra sempre). Esse efeito conecta o stream assim que o elemento
-  // realmente existe.
+  // (stage === 'requesting'), o elemento ainda nem existiria (bug
+  // real encontrado em teste: videoWidth ficava 0 pra sempre). Esse
+  // efeito conecta o stream assim que o elemento realmente existe, e
+  // dispara a detecção contínua de mão em tempo real.
   useEffect(() => {
-    if (stage === 'live' && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current
-      videoRef.current.play().catch(() => {})
+    if (stage !== 'live' || !videoRef.current || !streamRef.current) return
+    const video = videoRef.current
+    video.srcObject = streamRef.current
+    video.play().catch(() => {})
+
+    let cancelled = false
+    getHandLandmarker()
+      .then((landmarker) => {
+        if (cancelled) return
+        const loop = () => {
+          if (cancelled || !videoRef.current) return
+          if (videoRef.current.videoWidth > 0) {
+            try {
+              const result = landmarker.detectForVideo(videoRef.current, performance.now())
+              lastResultRef.current = result
+              setHandDetected((result.landmarks?.length ?? 0) > 0)
+            } catch {
+              // Frame ocasional pode falhar (câmera ainda ajustando) — sem problema, tenta de novo no próximo.
+            }
+          }
+          rafRef.current = requestAnimationFrame(loop)
+        }
+        loop()
+      })
+      .catch(() => {
+        // Sem IA disponível (rede, navegador sem suporte a WASM) — a
+        // captura continua funcionando normalmente, só sem a
+        // detecção ao vivo; cai pro ajuste 100% manual depois.
+      })
+
+    return () => {
+      cancelled = true
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [stage])
 
   async function startCamera() {
     setStage('requesting')
     setErrorMsg('')
+    setHandDetected(false)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } },
@@ -75,15 +124,11 @@ export function CameraTab() {
     }
   }
 
-  async function capture() {
+  function capture() {
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas) return
 
-    // Em alguns dispositivos o vídeo ainda não tem dimensões prontas
-    // logo que a câmera abre — capturar nesse momento gera uma foto
-    // vazia (0x0) e todo o cálculo depois vira NaN. Espera até o
-    // vídeo ter frames de verdade antes de permitir capturar.
     if (video.videoWidth === 0 || video.videoHeight === 0) {
       setErrorMsg('A câmera ainda está inicializando — aguarde um instante e tente capturar de novo.')
       return
@@ -95,31 +140,29 @@ export function CameraTab() {
     if (!ctx) return
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
 
+    // Usa a última detecção da câmera AO VIVO (já rodando em segundo
+    // plano) em vez de rodar a IA de novo na foto parada — mais
+    // rápido, e reaproveita exatamente o que a pessoa já viu
+    // confirmado como "mão detectada" antes de tirar a foto.
+    const hand = lastResultRef.current?.landmarks?.[0]
+    if (hand) {
+      const mcp = hand[FINGER_LANDMARK[finger]]
+      const wrist = hand[HAND_LANDMARKS.WRIST]
+      const handSpan = Math.hypot(mcp.x - wrist.x, mcp.y - wrist.y)
+      const halfWidth = handSpan * 0.16
+      setFingerHandles({ left: mcp.x - halfWidth, right: mcp.x + halfWidth, y: mcp.y })
+      setAutoDetected(true)
+    } else {
+      setAutoDetected(false)
+    }
+
+    // Cartão: posição inicial = a mesma região do guia mostrado ao
+    // vivo (a pessoa foi instruída a encaixar o cartão ali).
+    setCardRect({ x: CARD_GUIDE.x, y: CARD_GUIDE_TOP, w: CARD_GUIDE.width })
+
     streamRef.current?.getTracks().forEach((t) => t.stop())
     setPhotoUrl(canvas.toDataURL('image/jpeg', 0.92))
     setPhotoSize({ w: canvas.width, h: canvas.height })
-
-    setModelLoading(true)
-    try {
-      const landmarker = await getHandLandmarker()
-      const detection = landmarker.detect(canvas)
-      const hand = detection.landmarks?.[0]
-      if (hand) {
-        const mcp = hand[FINGER_LANDMARK[finger]]
-        const wrist = hand[HAND_LANDMARKS.WRIST]
-        const handSpan = Math.hypot(mcp.x - wrist.x, mcp.y - wrist.y)
-        const halfWidth = handSpan * 0.16
-        setFingerHandles({ left: mcp.x - halfWidth, right: mcp.x + halfWidth, y: mcp.y })
-        setAutoDetected(true)
-      } else {
-        setAutoDetected(false)
-      }
-    } catch {
-      setAutoDetected(false)
-    } finally {
-      setModelLoading(false)
-    }
-
     setStage('captured')
   }
 
@@ -171,8 +214,8 @@ export function CameraTab() {
         <SparklesIcon className="text-gold" size={28} />
         <p className="max-w-sm text-[14px] text-ivory/70">
           Coloque a mão espalmada sobre uma mesa, com um <strong className="text-ivory">cartão de crédito/débito</strong> encostado
-          ao lado do dedo — os dois na mesma superfície, na mesma foto. Nossa IA localiza a base do dedo
-          automaticamente; você só confirma o ajuste fino.
+          ao lado do dedo — os dois na mesma superfície. Nossa IA acompanha sua mão em tempo real e avisa assim que
+          conseguir localizar; você só confirma o ajuste fino depois.
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {(Object.keys(FINGER_LABEL) as Finger[]).map((f) => (
@@ -193,6 +236,14 @@ export function CameraTab() {
         >
           <Camera size={16} /> Abrir câmera
         </button>
+        <div className="flex max-w-sm items-start gap-2 rounded-xl border border-gold/25 bg-gold/5 px-4 py-3 text-left">
+          <Smartphone size={16} className="mt-0.5 shrink-0 text-gold" />
+          <p className="text-[12px] leading-relaxed text-ivory/70">
+            <strong className="text-ivory">Use o celular para melhor resultado.</strong> No computador, a câmera
+            costuma ser frontal e de baixa qualidade — dificulta enquadrar a mão numa mesa. Pelo celular, use a
+            câmera traseira e apoie o aparelho de forma estável antes de capturar.
+          </p>
+        </div>
         <p className="text-[11px] text-ivory/35">
           A foto nunca sai do seu aparelho — a análise roda 100% no seu navegador.
         </p>
@@ -221,20 +272,40 @@ export function CameraTab() {
   if (stage === 'live') {
     return (
       <div className="flex flex-col items-center gap-5">
-        <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-black">
+        <div
+          className={`relative w-full max-w-sm overflow-hidden rounded-2xl bg-black ring-2 transition-colors duration-300 ${
+            handDetected ? 'ring-green-400' : 'ring-transparent'
+          }`}
+        >
           <video ref={videoRef} playsInline muted className="w-full" />
           <div
-            className="pointer-events-none absolute rounded-md border-2 border-dashed border-gold/70"
+            className={`pointer-events-none absolute rounded-md border-2 border-dashed transition-colors duration-300 ${
+              handDetected ? 'border-green-400' : 'border-gold/70'
+            }`}
             style={{
-              left: '25%',
-              bottom: '10%',
-              width: '50%',
+              left: `${CARD_GUIDE.x * 100}%`,
+              bottom: `${CARD_GUIDE.bottom * 100}%`,
+              width: `${CARD_GUIDE.width * 100}%`,
               aspectRatio: `${CARD_WIDTH_MM} / ${CARD_HEIGHT_MM}`,
             }}
           />
+          <div
+            className={`absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-300 ${
+              handDetected ? 'bg-green-500 text-white' : 'bg-ink/70 text-ivory/80'
+            }`}
+          >
+            {handDetected ? (
+              <>
+                <CheckCircle2 size={13} /> Mão detectada
+              </>
+            ) : (
+              'Posicione sua mão'
+            )}
+          </div>
         </div>
         <p className="max-w-xs text-center text-[12px] text-ivory/50">
-          Encaixe o cartão dentro da guia tracejada e mantenha a mão espalmada visível.
+          Encaixe o cartão dentro da guia tracejada e mantenha a mão espalmada visível
+          {!handDetected && ' — aguarde o indicador ficar verde antes de capturar.'}
         </p>
         {errorMsg && <p className="text-[13px] text-garnet">{errorMsg}</p>}
         <button
@@ -250,7 +321,6 @@ export function CameraTab() {
 
   return (
     <div className="flex flex-col items-center gap-5">
-      {modelLoading && <p className="text-[13px] text-ivory/50">Localizando sua mão na foto…</p>}
       <div className="relative w-full max-w-sm select-none overflow-hidden rounded-2xl">
         <img src={photoUrl} alt="Foto capturada" className="w-full" draggable={false} />
 
