@@ -76,6 +76,20 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 ---
 
+## Quadro de calibração do cartão não respondia a arrastar (medidor de anel)
+
+**Problema**: na tela de ajuste da câmera do medidor de anel, o usuário conseguia arrastar as alcinhas vermelhas do dedo, mas o quadro dourado de calibração do cartão não se movia de jeito nenhum, só via o slider de tamanho — relatado por print real de uso.
+
+**Causa**: o componente `FingerHandles` é renderizado depois de `DraggableBox` no JSX, então fica visualmente por cima na pilha de elementos — e como o wrapper dele cobre a foto inteira (`absolute inset-0`) sem `pointer-events: none`, ele interceptava **qualquer clique na imagem inteira** antes de chegar no quadro do cartão embaixo, mesmo em áreas sem nenhuma alcinha visível ali. Só cliques bem em cima de uma alcinha específica passavam (são elementos próprios, recebem o clique direto).
+
+**Solução**: padrão CSS comum pra essa situação — `pointer-events: none` no wrapper que cobre tudo, `pointer-events: auto` só nos elementos realmente interativos (as duas alcinhas + a linha que as conecta) por cima dele.
+
+**Lição de processo**: os testes anteriores desse recurso nunca tinham simulado arrastar de verdade com o mouse (`mouse.down` → `mouse.move` → `mouse.up`, conferindo a posição do elemento antes/depois) — só cliques em botões e existência de elementos na tela. Esse tipo de bug de sobreposição de camadas (`z-index`/`pointer-events`) só aparece testando a interação de arrastar de verdade. Corrigido o processo de teste desse recurso para sempre incluir isso daqui pra frente.
+
+---
+
+
+
 ## Botão de instalar o PWA "não aparecia" no celular
 
 **Problema**: o convite pra instalar o painel como app existia no código (`InstallPwaButton`), mas o pedido foi verificar se ele realmente aparecia sempre que o app não estava instalado — e não aparecia, na prática.
