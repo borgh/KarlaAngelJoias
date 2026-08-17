@@ -51,7 +51,13 @@ export function CameraTab() {
 
   const [photoUrl, setPhotoUrl] = useState('')
   const [photoSize, setPhotoSize] = useState({ w: 0, h: 0 })
-  const [cardRect, setCardRect] = useState({ x: CARD_GUIDE.x, y: CARD_GUIDE_TOP, w: CARD_GUIDE.width })
+  const [cardRect, setCardRect] = useState({
+    cx: CARD_GUIDE.x + CARD_GUIDE.width / 2,
+    cy: CARD_GUIDE_TOP + CARD_GUIDE_HEIGHT / 2,
+    w: CARD_GUIDE.width,
+    h: CARD_GUIDE_HEIGHT,
+    rotationDeg: 0,
+  })
   const [fingerHandles, setFingerHandles] = useState({ left: 0.42, right: 0.58, y: 0.3 })
   const [autoDetected, setAutoDetected] = useState(false)
   const [result, setResult] = useState<ReturnType<typeof diameterToResult> | null>(null)
@@ -158,7 +164,13 @@ export function CameraTab() {
 
     // Cartão: posição inicial = a mesma região do guia mostrado ao
     // vivo (a pessoa foi instruída a encaixar o cartão ali).
-    setCardRect({ x: CARD_GUIDE.x, y: CARD_GUIDE_TOP, w: CARD_GUIDE.width })
+    setCardRect({
+      cx: CARD_GUIDE.x + CARD_GUIDE.width / 2,
+      cy: CARD_GUIDE_TOP + CARD_GUIDE_HEIGHT / 2,
+      w: CARD_GUIDE.width,
+      h: CARD_GUIDE_HEIGHT,
+      rotationDeg: 0,
+    })
 
     streamRef.current?.getTracks().forEach((t) => t.stop())
     setPhotoUrl(canvas.toDataURL('image/jpeg', 0.92))
@@ -324,15 +336,7 @@ export function CameraTab() {
       <div className="relative w-full max-w-sm select-none overflow-hidden rounded-2xl">
         <img src={photoUrl} alt="Foto capturada" className="w-full" draggable={false} />
 
-        <DraggableBox
-          xFrac={cardRect.x}
-          yFrac={cardRect.y}
-          widthFrac={cardRect.w}
-          heightFrac={cardRect.w * (CARD_HEIGHT_MM / CARD_WIDTH_MM)}
-          onMove={(x, y) => setCardRect((r) => ({ ...r, x, y }))}
-          label="Cartão"
-          color="border-gold"
-        />
+        <DraggableCard rect={cardRect} onChange={setCardRect} label="Cartão" />
 
         <FingerHandles
           left={fingerHandles.left}
@@ -342,20 +346,28 @@ export function CameraTab() {
         />
       </div>
 
-      <input
-        type="range"
-        min={0.15}
-        max={0.6}
-        step={0.005}
-        value={cardRect.w}
-        onChange={(e) => setCardRect((r) => ({ ...r, w: Number(e.target.value) }))}
-        className="w-full max-w-xs accent-gold"
-        aria-label="Ajustar tamanho do retângulo do cartão"
-      />
+      <div className="w-full max-w-sm space-y-3 rounded-xl border border-ivory/10 bg-ivory/5 p-4 text-left">
+        <p className="flex items-start gap-2 text-[12px] leading-relaxed text-gold">
+          <span className="mt-0.5 h-3 w-3 shrink-0 rounded-sm border-2 border-gold" />
+          <span>
+            <strong>Quadro dourado (cartão)</strong> — arraste pelo meio pra mover, pelo <strong>canto</strong> pra
+            redimensionar livremente, e pela <strong>alça de cima</strong> pra girar até acompanhar a inclinação real
+            do cartão na foto. Encaixe nas 4 bordas.
+          </span>
+        </p>
+        <p className="flex items-start gap-2 text-[12px] leading-relaxed text-red-300">
+          <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 border-red-400" />
+          <span>
+            <strong>Bolinhas vermelhas</strong> — arraste cada uma até tocar a <strong>borda lateral do dedo</strong>{' '}
+            (a largura dele, não a ponta) no ponto exato onde o anel ficaria apoiado.
+          </span>
+        </p>
+      </div>
+
       <p className="text-center text-[12px] text-ivory/50">
         {autoDetected
-          ? 'IA localizou sua mão — ajuste as alcinhas amarelas até a borda real do dedo, e o retângulo dourado até a borda do cartão.'
-          : 'Não conseguimos localizar a mão automaticamente — posicione as alcinhas e o retângulo manualmente.'}
+          ? 'IA localizou sua mão — o resto é só um ajuste fino.'
+          : 'Não conseguimos localizar a mão automaticamente — posicione manualmente com calma, sem pressa.'}
       </p>
       {errorMsg && <p className="max-w-sm text-center text-[13px] text-garnet">{errorMsg}</p>}
 
@@ -377,60 +389,119 @@ export function CameraTab() {
   )
 }
 
-function DraggableBox({
-  xFrac,
-  yFrac,
-  widthFrac,
-  heightFrac,
-  onMove,
-  label,
-  color,
-}: {
-  xFrac: number
-  yFrac: number
-  widthFrac: number
-  heightFrac: number
-  onMove: (x: number, y: number) => void
-  label: string
-  color: string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const dragging = useRef(false)
+// Quadro do cartão: move (arrastar o corpo), redimensiona livremente
+// (arrastar o canto inferior direito — largura e altura totalmente
+// independentes, sem proporção travada) e gira (arrastar a alça
+// acima do centro) — necessário porque na prática as pessoas
+// fotografam o cartão segurando na mão, num ângulo, não perfeitamente
+// alinhado com a câmera; um retângulo fixo sem rotação nunca encaixa
+// nesses casos.
+//
+// Toda a matemática de arrastar acontece em PIXELS reais do
+// contêiner (não em frações soltas) — evita distorção quando a foto
+// não é quadrada.
+type CardRectState = { cx: number; cy: number; w: number; h: number; rotationDeg: number }
 
-  function handlePointerDown(e: React.PointerEvent) {
-    dragging.current = true
+function DraggableCard({
+  rect,
+  onChange,
+  label,
+}: {
+  rect: CardRectState
+  onChange: (r: CardRectState) => void
+  label: string
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mode = useRef<'move' | 'resize' | 'rotate' | null>(null)
+  const startRef = useRef({ pointerX: 0, pointerY: 0, rect })
+
+  function getContainerRect() {
+    return containerRef.current?.parentElement?.getBoundingClientRect() ?? null
+  }
+
+  function beginDrag(e: React.PointerEvent, m: 'move' | 'resize' | 'rotate') {
+    e.stopPropagation()
+    mode.current = m
+    startRef.current = { pointerX: e.clientX, pointerY: e.clientY, rect }
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   }
+
   function handlePointerMove(e: React.PointerEvent) {
-    if (!dragging.current) return
-    const parent = ref.current?.parentElement
-    if (!parent) return
-    const rect = parent.getBoundingClientRect()
-    const x = Math.min(1 - widthFrac, Math.max(0, (e.clientX - rect.left) / rect.width - widthFrac / 2))
-    const y = Math.min(1 - heightFrac, Math.max(0, (e.clientY - rect.top) / rect.height - heightFrac / 2))
-    onMove(x, y)
+    if (!mode.current) return
+    const container = getContainerRect()
+    if (!container) return
+    const start = startRef.current
+    const dxPx = e.clientX - start.pointerX
+    const dyPx = e.clientY - start.pointerY
+
+    if (mode.current === 'move') {
+      onChange({
+        ...start.rect,
+        cx: Math.min(1, Math.max(0, start.rect.cx + dxPx / container.width)),
+        cy: Math.min(1, Math.max(0, start.rect.cy + dyPx / container.height)),
+      })
+      return
+    }
+
+    if (mode.current === 'resize') {
+      // Converte o deslocamento do mouse (em pixels de tela) pro
+      // referencial LOCAL do retângulo (que pode estar girado) —
+      // sem isso, redimensionar um cartão girado puxaria pro lado
+      // errado.
+      const rad = (-start.rect.rotationDeg * Math.PI) / 180
+      const localDx = dxPx * Math.cos(rad) - dyPx * Math.sin(rad)
+      const localDy = dxPx * Math.sin(rad) + dyPx * Math.cos(rad)
+      const newW = Math.min(0.9, Math.max(0.08, start.rect.w + (localDx / container.width) * 2))
+      const newH = Math.min(0.9, Math.max(0.08, start.rect.h + (localDy / container.height) * 2))
+      onChange({ ...start.rect, w: newW, h: newH })
+      return
+    }
+
+    // rotate
+    const centerPx = { x: start.rect.cx * container.width + container.left, y: start.rect.cy * container.height + container.top }
+    const angle = (Math.atan2(e.clientX - centerPx.x, -(e.clientY - centerPx.y)) * 180) / Math.PI
+    onChange({ ...start.rect, rotationDeg: angle })
   }
+
   function handlePointerUp() {
-    dragging.current = false
+    mode.current = null
+  }
+
+  const style: React.CSSProperties = {
+    left: `${rect.cx * 100}%`,
+    top: `${rect.cy * 100}%`,
+    width: `${rect.w * 100}%`,
+    height: `${rect.h * 100}%`,
+    transform: `translate(-50%, -50%) rotate(${rect.rotationDeg}deg)`,
   }
 
   return (
     <div
-      ref={ref}
-      onPointerDown={handlePointerDown}
+      ref={containerRef}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      className={`absolute cursor-move touch-none rounded-md border-2 bg-black/10 ${color}`}
-      style={{
-        left: `${xFrac * 100}%`,
-        top: `${yFrac * 100}%`,
-        width: `${widthFrac * 100}%`,
-        height: `${heightFrac * 100}%`,
-      }}
+      className="absolute touch-none cursor-move rounded-md border-2 border-gold bg-black/10"
+      style={style}
+      onPointerDown={(e) => beginDrag(e, 'move')}
     >
-      <span className="absolute -top-5 left-0 text-[10px] font-semibold uppercase tracking-wide text-gold">
+      <span className="pointer-events-none absolute -top-5 left-0 text-[10px] font-semibold uppercase tracking-wide text-gold">
         {label}
       </span>
+
+      {/* alça de rotação */}
+      <div
+        onPointerDown={(e) => beginDrag(e, 'rotate')}
+        className="absolute left-1/2 top-0 flex h-6 w-6 -translate-x-1/2 -translate-y-[150%] cursor-grab items-center justify-center rounded-full border-2 border-gold bg-ink"
+      >
+        <RotateCcw size={12} className="text-gold" />
+      </div>
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[50%] w-px -translate-x-1/2 -translate-y-full bg-gold/50" />
+
+      {/* alça de redimensionar (canto inferior direito) */}
+      <div
+        onPointerDown={(e) => beginDrag(e, 'resize')}
+        className="absolute -bottom-2.5 -right-2.5 h-5 w-5 cursor-nwse-resize rounded-full border-2 border-gold bg-ink"
+      />
     </div>
   )
 }
