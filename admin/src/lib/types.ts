@@ -68,11 +68,12 @@ export type NotificationSettings = {
     fromEmail: string
     notifyToEmail: string
   }
-  whatsapp: {
-    apiUrl: string
-    apiKeySet: boolean
-    instanceName: string
-    notifyNumber: string
-  }
+  whatsappNotifyNumber: string
+  whatsappServerConfigured: boolean
   pushVapidPublicKey: string
+}
+
+export type WhatsAppStatus = {
+  configured: boolean
+  state: 'open' | 'connecting' | 'close' | 'unconfigured'
 }

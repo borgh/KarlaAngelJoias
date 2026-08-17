@@ -24,6 +24,17 @@ if [ -z "${JWT_SECRET:-}" ]; then
   exit 1
 fi
 
+# Integração com WhatsApp (Evolution API) é opcional — se essas
+# variáveis não estiverem definidas, a API sobe normal e o WhatsApp só
+# fica indisponível na tela de Notificações (não trava o resto).
+EVOLUTION_API_URL="${EVOLUTION_API_URL:-}"
+EVOLUTION_API_KEY="${EVOLUTION_API_KEY:-}"
+EVOLUTION_INSTANCE_NAME="${EVOLUTION_INSTANCE_NAME:-karlaangeljoias}"
+# Nome da rede Docker onde o container da Evolution API do VBMA está
+# (ex: vbma_network) — só usado se EVOLUTION_API_URL apontar pra um
+# hostname interno dessa rede (ex: http://vbma_evolution:8080).
+EVOLUTION_DOCKER_NETWORK="${EVOLUTION_DOCKER_NETWORK:-}"
+
 echo "==> Garantindo volumes persistentes"
 docker volume create "$DB_VOLUME" >/dev/null
 docker volume create "$UPLOADS_VOLUME" >/dev/null
@@ -46,7 +57,23 @@ docker run -d \
   -e "CORS_ORIGINS=https://karlaangeljoias.com.br,https://admin.karlaangeljoias.com.br" \
   -e "SEED_ADMIN_EMAIL=${SEED_ADMIN_EMAIL:-admin@karlaangeljoias.com.br}" \
   -e "SEED_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD:-}" \
+  -e "EVOLUTION_API_URL=${EVOLUTION_API_URL}" \
+  -e "EVOLUTION_API_KEY=${EVOLUTION_API_KEY}" \
+  -e "EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME}" \
   "$IMAGE_NAME"
+
+# Se a Evolution API do VBMA estiver numa rede Docker separada (ex:
+# vbma_network), conecta o container da API da Karla Angel também
+# nessa rede, além da "kamal" — só assim ela consegue alcançar um
+# hostname interno tipo http://vbma_evolution:8080.
+if [ -n "$EVOLUTION_DOCKER_NETWORK" ]; then
+  if docker network inspect "$EVOLUTION_DOCKER_NETWORK" >/dev/null 2>&1; then
+    docker network connect "$EVOLUTION_DOCKER_NETWORK" "$NEW_CONTAINER" 2>/dev/null || true
+    echo "    conectado também à rede $EVOLUTION_DOCKER_NETWORK (pra alcançar a Evolution API)."
+  else
+    echo "    ⚠️  rede '$EVOLUTION_DOCKER_NETWORK' não encontrada — WhatsApp pode não conseguir conectar."
+  fi
+fi
 
 echo "==> Aguardando o novo container ficar saudável"
 for i in $(seq 1 20); do

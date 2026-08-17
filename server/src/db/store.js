@@ -43,12 +43,11 @@ const DEFAULT_DATA = {
       fromEmail: '',
       notifyToEmail: '',
     },
-    whatsapp: {
-      apiUrl: '',
-      apiKey: '',
-      instanceName: '',
-      notifyNumber: '', // formato: 55DDDNUMERO
-    },
+    // Número que RECEBE os alertas — não é segredo, fica editável aqui.
+    // A URL/chave/instância da Evolution API em si vêm de variáveis de
+    // ambiente do servidor (nunca salvas no banco nem no git), porque
+    // são compartilhadas com o servidor Evolution já usado pelo VBMA.
+    whatsappNotifyNumber: '',
     push: {
       vapidPublicKey: '',
       vapidPrivateKey: '',
@@ -72,7 +71,6 @@ function load() {
       ...structuredClone(DEFAULT_DATA.settings),
       ...(parsed.settings || {}),
       smtp: { ...structuredClone(DEFAULT_DATA.settings.smtp), ...(parsed.settings?.smtp || {}) },
-      whatsapp: { ...structuredClone(DEFAULT_DATA.settings.whatsapp), ...(parsed.settings?.whatsapp || {}) },
       push: { ...structuredClone(DEFAULT_DATA.settings.push), ...(parsed.settings?.push || {}) },
     }
     return merged
@@ -165,7 +163,6 @@ export const store = {
         ...data.settings,
         ...patch,
         smtp: { ...data.settings.smtp, ...(patch.smtp || {}) },
-        whatsapp: { ...data.settings.whatsapp, ...(patch.whatsapp || {}) },
         push: { ...data.settings.push, ...(patch.push || {}) },
       }
       save(data)

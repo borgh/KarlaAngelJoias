@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
-import { Bell, BellOff, Mail, MessageCircle, Save, Send, ShieldCheck } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Bell, BellOff, Mail, MessageCircle, Save, Send, ShieldCheck, Smartphone, CheckCircle2, LogOut } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import { getCurrentSubscription, getPushPermissionState, isPushSupported, subscribeToPush, unsubscribeFromPush } from '../lib/push'
-import type { NotificationSettings, NotifyChannel } from '../lib/types'
+import type { NotificationSettings, NotifyChannel, WhatsAppStatus } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 
 const CHANNEL_LABELS: { value: NotifyChannel; label: string }[] = [
@@ -29,9 +29,6 @@ export default function NotificationSettingsPage() {
   const [smtpFromName, setSmtpFromName] = useState('')
   const [smtpFromEmail, setSmtpFromEmail] = useState('')
   const [smtpNotifyTo, setSmtpNotifyTo] = useState('')
-  const [waApiUrl, setWaApiUrl] = useState('')
-  const [waApiKey, setWaApiKey] = useState('')
-  const [waInstance, setWaInstance] = useState('')
   const [waNotifyNumber, setWaNotifyNumber] = useState('')
 
   const [testingEmail, setTestingEmail] = useState(false)
@@ -40,6 +37,13 @@ export default function NotificationSettingsPage() {
   const [pushState, setPushState] = useState<'unsupported' | 'default' | 'granted' | 'denied'>('default')
   const [pushSubscribed, setPushSubscribed] = useState(false)
   const [pushBusy, setPushBusy] = useState(false)
+
+  // Estado da conexão do WhatsApp (QR code)
+  const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null)
+  const [waQr, setWaQr] = useState<string | null>(null)
+  const [waConnecting, setWaConnecting] = useState(false)
+  const [waDisconnecting, setWaDisconnecting] = useState(false)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function load() {
     const data = await api.get<{ settings: NotificationSettings }>('/api/settings/notifications')
@@ -53,20 +57,77 @@ export default function NotificationSettingsPage() {
     setSmtpFromName(data.settings.smtp.fromName)
     setSmtpFromEmail(data.settings.smtp.fromEmail)
     setSmtpNotifyTo(data.settings.smtp.notifyToEmail)
-    setWaApiUrl(data.settings.whatsapp.apiUrl)
-    setWaInstance(data.settings.whatsapp.instanceName)
-    setWaNotifyNumber(data.settings.whatsapp.notifyNumber)
+    setWaNotifyNumber(data.settings.whatsappNotifyNumber)
     setLoading(false)
 
     const perm = await getPushPermissionState()
     setPushState(perm)
     const sub = await getCurrentSubscription()
     setPushSubscribed(!!sub)
+
+    if (data.settings.whatsappServerConfigured) {
+      refreshWhatsAppStatus()
+    }
   }
 
   useEffect(() => {
     load()
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
   }, [])
+
+  async function refreshWhatsAppStatus() {
+    try {
+      const status = await api.get<WhatsAppStatus>('/api/settings/whatsapp/status')
+      setWaStatus(status)
+      if (status.state === 'open' && pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+        setWaQr(null)
+      }
+      return status
+    } catch {
+      return null
+    }
+  }
+
+  async function handleConnectWhatsApp() {
+    setWaConnecting(true)
+    setError('')
+    try {
+      const qr = await api.post<{ base64: string | null; connected: boolean }>('/api/settings/whatsapp/connect')
+      if (qr.connected) {
+        setWaQr(null)
+        await refreshWhatsAppStatus()
+      } else {
+        setWaQr(qr.base64)
+        // Fica reconsultando o status a cada 3s até conectar (ou a
+        // página ser fechada) — assim que o celular escaneia, o QR
+        // some sozinho e mostra "conectado".
+        if (pollRef.current) clearInterval(pollRef.current)
+        pollRef.current = setInterval(refreshWhatsAppStatus, 3000)
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Falha ao gerar QR code.')
+    } finally {
+      setWaConnecting(false)
+    }
+  }
+
+  async function handleDisconnectWhatsApp() {
+    setWaDisconnecting(true)
+    setError('')
+    try {
+      await api.post('/api/settings/whatsapp/disconnect')
+      setWaQr(null)
+      await refreshWhatsAppStatus()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Falha ao desconectar.')
+    } finally {
+      setWaDisconnecting(false)
+    }
+  }
 
   function toggleGlobalChannel(c: NotifyChannel) {
     setGlobalChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -80,6 +141,7 @@ export default function NotificationSettingsPage() {
       const data = await api.put<{ settings: NotificationSettings }>('/api/settings/notifications', {
         globalMinStockThreshold: globalThreshold,
         globalNotifyChannels: globalChannels,
+        whatsappNotifyNumber: waNotifyNumber,
         smtp: {
           host: smtpHost,
           port: smtpPort,
@@ -90,16 +152,9 @@ export default function NotificationSettingsPage() {
           fromEmail: smtpFromEmail,
           notifyToEmail: smtpNotifyTo,
         },
-        whatsapp: {
-          apiUrl: waApiUrl,
-          apiKey: waApiKey,
-          instanceName: waInstance,
-          notifyNumber: waNotifyNumber,
-        },
       })
       setSettings(data.settings)
       setSmtpPass('')
-      setWaApiKey('')
       setMessage('Configurações salvas com sucesso.')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Erro ao salvar.')
@@ -172,6 +227,7 @@ export default function NotificationSettingsPage() {
   if (loading || !settings) return <p className="text-ink/50">Carregando…</p>
 
   const canEdit = !!user?.canEdit
+  const waConnected = waStatus?.state === 'open'
 
   return (
     <div>
@@ -327,47 +383,85 @@ export default function NotificationSettingsPage() {
         <div className="rounded-2xl border border-ink/10 bg-white p-6">
           <div className="mb-1 flex items-center gap-2">
             <MessageCircle size={18} className="text-gold" />
-            <h2 className="font-display text-lg text-ink">WhatsApp (Evolution API)</h2>
+            <h2 className="font-display text-lg text-ink">WhatsApp</h2>
           </div>
           <p className="mb-5 text-[13px] text-ink/50">
-            Usa a mesma Evolution API (QR code, não é a API oficial da Meta) — informe a URL, chave e nome da
-            instância já configurados no seu servidor.
+            Conecte um número de WhatsApp escaneando o QR code — igual conectar o WhatsApp Web. Não é a API oficial
+            da Meta; é a mesma tecnologia usada no VBMA, mas com uma conexão própria da Karla Angel Joias.
           </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="URL da API" value={waApiUrl} onChange={setWaApiUrl} disabled={!canEdit} placeholder="https://evolution.seudominio.com" className="sm:col-span-2" />
+
+          {!settings.whatsappServerConfigured ? (
+            <p className="rounded-lg bg-ivory-dim px-4 py-3 text-[13px] text-ink/60">
+              O servidor ainda não tem a integração de WhatsApp habilitada. Isso é configurado uma vez pelo
+              administrador do servidor (fora do painel).
+            </p>
+          ) : waConnected ? (
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 text-[13px] font-semibold text-green-700">
+                <CheckCircle2 size={16} /> WhatsApp conectado
+              </span>
+              {canEdit && (
+                <button
+                  onClick={handleDisconnectWhatsApp}
+                  disabled={waDisconnecting}
+                  className="flex items-center gap-2 rounded-full border border-garnet/30 px-5 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-garnet hover:bg-garnet/10"
+                >
+                  <LogOut size={14} /> {waDisconnecting ? 'Desconectando…' : 'Desconectar'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div>
+              {waQr ? (
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+                  <img
+                    src={`data:image/png;base64,${waQr.replace(/^data:image\/\w+;base64,/, '')}`}
+                    alt="QR code do WhatsApp"
+                    className="h-48 w-48 rounded-lg border border-ink/10"
+                  />
+                  <p className="max-w-xs text-[13px] text-ink/60">
+                    Abra o WhatsApp no celular que vai enviar os alertas → Configurações → Aparelhos conectados →
+                    Conectar um aparelho, e escaneie este código.
+                  </p>
+                </div>
+              ) : (
+                canEdit && (
+                  <button
+                    onClick={handleConnectWhatsApp}
+                    disabled={waConnecting}
+                    className="flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-ink hover:bg-gold-bright disabled:opacity-50"
+                  >
+                    <Smartphone size={14} /> {waConnecting ? 'Gerando QR code…' : 'Conectar WhatsApp'}
+                  </button>
+                )
+              )}
+            </div>
+          )}
+
+          <div className="mt-5 border-t border-ink/10 pt-5">
             <Field
-              label={settings.whatsapp.apiKeySet ? 'Chave da API (preenchida — deixe em branco pra manter)' : 'Chave da API'}
-              type="password"
-              value={waApiKey}
-              onChange={setWaApiKey}
-              disabled={!canEdit}
-              placeholder={settings.whatsapp.apiKeySet ? '••••••••' : ''}
-            />
-            <Field label="Nome da instância" value={waInstance} onChange={setWaInstance} disabled={!canEdit} />
-            <Field
-              label="Número de destino (com DDI e DDD)"
+              label="Número de destino dos alertas (com DDI e DDD)"
               value={waNotifyNumber}
               onChange={setWaNotifyNumber}
               disabled={!canEdit}
               placeholder="5527999999999"
-              className="sm:col-span-2"
             />
+            {canEdit && waConnected && (
+              <button
+                onClick={handleTestWhatsapp}
+                disabled={testingWhatsapp}
+                className="mt-4 flex items-center gap-2 rounded-full border border-ink/15 px-5 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-ink/70 hover:border-gold hover:text-gold"
+              >
+                <Send size={14} /> {testingWhatsapp ? 'Enviando…' : 'Enviar WhatsApp de teste'}
+              </button>
+            )}
           </div>
-          {canEdit && (
-            <button
-              onClick={handleTestWhatsapp}
-              disabled={testingWhatsapp}
-              className="mt-4 flex items-center gap-2 rounded-full border border-ink/15 px-5 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-ink/70 hover:border-gold hover:text-gold"
-            >
-              <Send size={14} /> {testingWhatsapp ? 'Enviando…' : 'Enviar WhatsApp de teste'}
-            </button>
-          )}
         </div>
 
         <div className="flex items-start gap-2 rounded-2xl border border-ink/10 bg-ivory-dim p-4 text-[12px] text-ink/50">
           <ShieldCheck size={16} className="mt-0.5 shrink-0 text-gold" />
-          Senhas e chaves de API nunca são reexibidas depois de salvas — só mostramos se já estão configuradas ou
-          não. Pra trocar, digite o novo valor; pra manter o atual, deixe o campo em branco.
+          Senha do SMTP nunca é reexibida depois de salva — só mostramos se já está configurada ou não. Pra trocar,
+          digite o novo valor; pra manter o atual, deixe o campo em branco.
         </div>
       </div>
     </div>

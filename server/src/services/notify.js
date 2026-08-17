@@ -53,18 +53,94 @@ export async function sendEmailAlert(subject, html) {
 }
 
 // ---------------------------------------------------------------------
-// WhatsApp (Evolution API — mesmo padrão usado no VBMA: POST
-// {apiUrl}/message/sendText/{instanceName} com header apikey)
+// WhatsApp (Evolution API — mesmo servidor usado pelo VBMA, mas com uma
+// instância própria da Karla Angel Joias). URL e chave da API NUNCA
+// ficam no banco de dados nem no código — só em variáveis de ambiente
+// do container, como o JWT_SECRET. Cada negócio (VBMA, Karla Angel)
+// tem seu próprio nome de instância, então são conexões de WhatsApp
+// totalmente separadas dentro do mesmo servidor Evolution.
 // ---------------------------------------------------------------------
-export async function sendWhatsAppAlert(text) {
-  const { whatsapp } = store.settings.get()
-  if (!whatsapp.apiUrl || !whatsapp.apiKey || !whatsapp.instanceName || !whatsapp.notifyNumber) {
-    throw new Error('WhatsApp não configurado (URL da API, chave, instância e número de destino são obrigatórios).')
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || ''
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || ''
+const EVOLUTION_INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || 'karlaangeljoias'
+
+export function isWhatsAppServerConfigured() {
+  return !!(EVOLUTION_API_URL && EVOLUTION_API_KEY)
+}
+
+function evolutionHeaders() {
+  return { apikey: EVOLUTION_API_KEY, 'Content-Type': 'application/json' }
+}
+
+function requireWhatsAppConfigured() {
+  if (!isWhatsAppServerConfigured()) {
+    throw new Error(
+      'Evolution API não configurada neste servidor (faltam EVOLUTION_API_URL/EVOLUTION_API_KEY). Isso é configurado pelo administrador do servidor, não por aqui.'
+    )
   }
-  const res = await fetch(`${whatsapp.apiUrl}/message/sendText/${whatsapp.instanceName}`, {
+}
+
+// Cria a instância na Evolution API — idempotente (se já existir, ignora).
+export async function createWhatsAppInstance() {
+  requireWhatsAppConfigured()
+  const res = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
     method: 'POST',
-    headers: { apikey: whatsapp.apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ number: whatsapp.notifyNumber, text }),
+    headers: evolutionHeaders(),
+    body: JSON.stringify({
+      instanceName: EVOLUTION_INSTANCE_NAME,
+      qrcode: true,
+      integration: 'WHATSAPP-BAILEYS',
+    }),
+  })
+  if (!res.ok && res.status !== 403 && res.status !== 409) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Falha ao criar instância (${res.status}): ${body.slice(0, 300)}`)
+  }
+}
+
+// Busca o QR code atual (imagem base64) pra conectar via WhatsApp do celular.
+export async function getWhatsAppQrCode() {
+  requireWhatsAppConfigured()
+  const res = await fetch(`${EVOLUTION_API_URL}/instance/connect/${EVOLUTION_INSTANCE_NAME}`, {
+    headers: evolutionHeaders(),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Falha ao buscar QR code (${res.status}): ${body.slice(0, 300)}`)
+  }
+  const data = await res.json()
+  if (data?.instance?.state === 'open') return { base64: null, connected: true }
+  return { base64: data?.base64 ?? data?.qrcode?.base64 ?? null, connected: false }
+}
+
+export async function getWhatsAppConnectionStatus() {
+  if (!isWhatsAppServerConfigured()) return 'unconfigured'
+  const res = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${EVOLUTION_INSTANCE_NAME}`, {
+    headers: evolutionHeaders(),
+  })
+  if (!res.ok) return 'close'
+  const data = await res.json()
+  return data?.instance?.state ?? data?.state ?? 'close'
+}
+
+export async function disconnectWhatsApp() {
+  requireWhatsAppConfigured()
+  await fetch(`${EVOLUTION_API_URL}/instance/logout/${EVOLUTION_INSTANCE_NAME}`, {
+    method: 'DELETE',
+    headers: evolutionHeaders(),
+  })
+}
+
+export async function sendWhatsAppAlert(text) {
+  requireWhatsAppConfigured()
+  const { whatsappNotifyNumber } = store.settings.get()
+  if (!whatsappNotifyNumber) {
+    throw new Error('Número de destino do WhatsApp não configurado.')
+  }
+  const res = await fetch(`${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE_NAME}`, {
+    method: 'POST',
+    headers: evolutionHeaders(),
+    body: JSON.stringify({ number: whatsappNotifyNumber, text }),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
