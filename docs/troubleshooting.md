@@ -90,6 +90,22 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 
 
+## Alça de rotação do cartão não girava (mesma classe de bug de sobreposição, de novo)
+
+**Problema**: ao adicionar a alça de girar o quadro do cartão, arrastá-la não girava nada — o quadro se movia de lugar em vez de girar.
+
+**Causa**: a mesma classe de bug do caso anterior ("Quadro de calibração..."), só que num elemento diferente — a linha decorativa que conecta visualmente o cartão à alça de rotação (só um traço fino, sem função nenhuma) não tinha `pointer-events: none`, e por estar posicionada por cima da alça na ordem de renderização, interceptava o clique antes dele chegar na alça de verdade. O clique caía no elemento errado (a linha), que não tinha handler nenhum, então borbulhava pro `onPointerDown` do quadro inteiro (modo "mover").
+
+**Diagnóstico**: `console.log` temporário direto no código confirmou exatamente isso — o `e.target` do clique era a linha decorativa, não a alça.
+
+**Solução**: `pointer-events: none` na linha decorativa e no rótulo de texto "Cartão" (mesmo elemento que só existe pra aparência, nunca deveria interceptar clique).
+
+**Padrão a lembrar**: qualquer elemento visual puramente decorativo posicionado por cima de uma área interativa precisa de `pointer-events: none` — isso já apareceu 2 vezes nesse mesmo recurso (ver caso acima). Ao adicionar elemento visual novo sobreposto a algo clicável, checar isso de cara.
+
+---
+
+
+
 ## Botão de instalar o PWA "não aparecia" no celular
 
 **Problema**: o convite pra instalar o painel como app existia no código (`InstallPwaButton`), mas o pedido foi verificar se ele realmente aparecia sempre que o app não estava instalado — e não aparecia, na prática.
