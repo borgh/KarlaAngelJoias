@@ -64,6 +64,18 @@ Fórmulas em `ringSizeChart.ts`, validadas contra pontos de referência cruzados
 
 Validade assumida: 38mm–75mm de circunferência (`MIN_CIRCUMFERENCE_MM`/`MAX_CIRCUMFERENCE_MM`) — fora dessa faixa, a ferramenta avisa que o valor parece incomum em vez de mostrar um resultado sem sentido.
 
+### Detecção automática do cartão por bordas (best-effort)
+
+`src/lib/cardDetector.ts`, função `refineCardRect()` — depois de capturar, refina automaticamente a posição/tamanho/rotação do quadro de calibração, tentando encaixar nas bordas reais do cartão detectadas na foto. Técnica: gradiente Sobel (magnitude de borda) + busca em duas fases — uma grade grosseira de posição/escala primeiro (evita ficar "preso" numa região sem gradiente, problema real encontrado testando a primeira versão), seguida de refinamento fino por coordinate descent. Roda em ~75-150ms, 100% no navegador, sem dependência nova.
+
+**Honestidade técnica**: testado com uma foto sintética idealizada (cartão bem definido, fundo uniforme), o refinamento melhora a posição de forma mensurável (~50% de redução no erro de posição) mas **não converge pra um encaixe perfeito de forma confiável** — características internas do próprio cartão (chip, texto, logo) podem confundir a busca, puxando o retângulo pra um tamanho ligeiramente errado. Por isso a interface descreve isso como "encaixado automaticamente — confira e ajuste fino se precisar", nunca como garantia de precisão. Ajuste manual continua sempre disponível.
+
+Essa é a mesma razão pela qual optamos por essa técnica em vez de OpenCV.js (avaliado e descartado — ver `docs/troubleshooting.md`, bugs documentados de instabilidade com Vite): entre um risco real de dependência instável e uma técnica mais simples com limitações conhecidas e comunicadas, a segunda é mais responsável.
+
+### Bolinhas do dedo em formato de mira vazada
+
+Redesenhadas depois de um relato real: o preenchimento vermelho sólido das bolinhas tampava a vista da borda do dedo bem no ponto que importa, dificultando perceber se o ajuste ficou preciso. Agora são uma "mira" vazada — anel branco externo (contraste em qualquer tom de pele) + anel vermelho mais fino por dentro + cruz central marcando o ponto exato — sem nada sólido tampando a imagem por baixo.
+
 ### Diagrama de posicionamento e erro diagnóstico
 
 Um erro real de uso mostrou que texto sozinho não bastava: usuários fotografavam a palma virada de frente pra câmera (mão levantada, segurando o cartão) em vez de deitar a mão numa mesa e fotografar de cima — os dedos ficavam cortados ou dobrados fora do enquadramento certo, resultando num valor calculado sem sentido.

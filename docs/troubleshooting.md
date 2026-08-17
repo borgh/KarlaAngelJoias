@@ -106,6 +106,18 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 
 
+## Alça de arrastar vertical ficou bloqueada depois de aumentar a área de clique das bolinhas
+
+**Problema**: aumentar a área de clique das bolinhas do dedo (de 20px pra 32px, parte do redesenho delas em formato de mira) fez a alça de arrastar o par verticalmente parar de responder em alguns pontos.
+
+**Causa**: as duas melhorias, cada uma sensata isoladamente, entraram em conflito — a alça vertical ocupava a mesma faixa horizontal das bolinhas (entre elas), e quando as bolinhas estão próximas uma da outra (comum logo depois de capturar, antes do ajuste fino), a área de clique maior de cada bolinha (32px de raio) passou a se sobrepor com o espaço da alça, vencendo o hit-test do navegador nessa região por estar mais "por cima" na ordem de renderização.
+
+**Solução**: reposicionar a alça de arrastar vertical pra uma zona comprovadamente livre de sobreposição — abaixo da linha que conecta as bolinhas, com um pequeno conector visual, em vez de ocupar a mesma faixa horizontal delas (mesmo padrão já usado na alça de girar do quadro do cartão, que fica acima dele por um motivo parecido).
+
+**Lição de processo**: bugs de sobreposição de área de clique (`pointer-events`, ordem de renderização) são a categoria de bug mais recorrente encontrada nesse recurso específico (ver os 2 casos anteriores) — qualquer elemento interativo novo posicionado perto de outro precisa ser testado arrastando de verdade, em várias posições dentro da área de clique (não só no centro exato), não só verificado por existir na tela.
+
+---
+
 ## Botão de instalar o PWA "não aparecia" no celular
 
 **Problema**: o convite pra instalar o painel como app existia no código (`InstallPwaButton`), mas o pedido foi verificar se ele realmente aparecia sempre que o app não estava instalado — e não aparecia, na prática.
