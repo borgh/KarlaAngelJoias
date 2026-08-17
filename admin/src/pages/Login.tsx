@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, ApiError } from '../context/AuthContext'
+import { InstallPwaBanner } from '../components/InstallPwaBanner'
 
 export default function Login() {
   const { login } = useAuth()
@@ -27,7 +28,13 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ink px-6">
+    <div className="relative flex min-h-screen items-center justify-center bg-ink px-6 py-6">
+      {/* Instalar não deveria depender de já estar logado — o banner
+          aparece aqui também, não só depois de entrar no painel. */}
+      <div className="absolute inset-x-0 top-0">
+        <InstallPwaBanner />
+      </div>
+
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="font-display text-2xl text-ivory">
