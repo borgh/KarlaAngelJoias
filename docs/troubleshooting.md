@@ -66,10 +66,21 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 ---
 
-
+## Menu inferior "sumindo e voltando" itens ao excluir vários
 
 **Problema**: excluir itens do carrossel do Instagram em sequência rápida parecia "recriar" itens já excluídos, voltando pro número original.
 
 **Causa**: nenhuma — o arquivo de dados no servidor sempre esteve correto (confirmado lendo o JSON direto). Era só a tela do navegador não tendo recarregado a lista mais recente antes do próximo clique, dando a impressão de itens "voltando".
 
 **Solução**: nenhuma mudança de código necessária — um F5 resolvia. Documentado aqui porque a investigação inicial (containers duplicados, condição de corrida no backend) levou um tempo até se confirmar que os dados sempre estiveram certos.
+
+---
+
+## Botão de instalar o PWA "não aparecia" no celular
+
+**Problema**: o convite pra instalar o painel como app existia no código (`InstallPwaButton`), mas o pedido foi verificar se ele realmente aparecia sempre que o app não estava instalado — e não aparecia, na prática.
+
+**Causa**: o componente só era renderizado **dentro do menu lateral/gaveta** — no celular, isso fica atrás do botão hambúrguer (fechado por padrão). Não era um bug de detecção (a lógica de `beforeinstallprompt`/iOS estava correta), era um problema de **descoberta**: ninguém via o convite sem abrir o menu por conta própria primeiro.
+
+**Solução**: lógica de detecção extraída pra um hook compartilhado (`admin/src/lib/usePwaInstall.ts`) — única fonte de verdade, já que o evento `beforeinstallprompt` só dispara uma vez e não pode ser "escutado" por dois componentes de forma independente sem risco de comportamento inconsistente. Novo componente `InstallPwaBanner`, visível direto no topo da tela principal (não dentro de menu nenhum), só no celular. Testado simulando o evento `beforeinstallprompt` via `page.evaluate()` (o Chrome headless não dispara esse evento sozinho, mesmo com todos os critérios de instalabilidade satisfeitos) em 3 cenários — Android/Chrome, iOS/Safari e Desktop.
+
