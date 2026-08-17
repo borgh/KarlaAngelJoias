@@ -76,6 +76,8 @@ Calibrado com 6 cenários sintéticos, todos corretos: aprova cartão realista (
 
 Na interface ao vivo, dois indicadores **separados** ("Mão" e "Cartão"), cada um verde independentemente, com mensagem contextual dizendo o que ainda falta ajustar. Quando os dois estão OK: borda verde, "✅ pode capturar", botão vira "Capturar agora". O objetivo é **guiar a pessoa pra tirar uma foto boa** antes de capturar — que é o que realmente determina o resultado, muito mais que qualquer processamento depois.
 
+**Importante — a checagem ao vivo tem prioridade sobre o refinamento pós-captura**: se `checkCardInGuide()` já confirmou o cartão bem encaixado no guia durante a pré-visualização (indicador "Cartão" verde), a captura usa essa posição **diretamente**, sem rodar `refineCardRect()` por cima. Bug real corrigido: antes, o refinamento pós-captura (sabidamente imperfeito) rodava sempre, podendo desalinhar um cartão que a checagem ao vivo já tinha confirmado como certo. O refinamento pós-captura continua existindo só como reserva, pra quando não houve essa confirmação ao vivo.
+
 ### Alternativas mais "avançadas" avaliadas e descartadas
 
 **Segment Anything (SAM / SAM2, Meta)** — modelo de segmentação com precisão de pixel, seria o ideal em teoria pra recortar o dedo e o cartão exatamente. Descartado por um motivo concreto de viabilidade: [rodando no navegador via WebAssembly, o encoder leva ~45 segundos, impraticável](https://github.com/microsoft/onnxruntime-inference-examples/tree/main/js/segment-anything); só fica rápido com WebGPU em GPUs recentes, que muitos celulares dos clientes não têm. Pra uma loja onde qualquer cliente precisa conseguir usar, isso é um risco inaceitável — melhor uma técnica mais simples que funciona em qualquer aparelho e guia bem a foto.
