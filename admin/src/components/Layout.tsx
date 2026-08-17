@@ -7,19 +7,25 @@ import {
   Image as ImageIcon,
   FileText,
   Users,
+  Warehouse,
+  Bell,
   LogOut,
   Menu,
   X,
+  Smartphone,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { InstallPwaButton } from './InstallPwaButton'
+import { ALL_MOBILE_NAV_OPTIONS, DEFAULT_BOTTOM_NAV } from '../config/mobileNavOptions'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Visão geral', icon: LayoutGrid, end: true },
   { to: '/produtos', label: 'Produtos', icon: Gem },
+  { to: '/estoque', label: 'Estoque', icon: Warehouse },
   { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/conteudo', label: 'Textos do site', icon: FileText },
   { to: '/carrossel', label: 'Carrossel Instagram', icon: ImageIcon },
+  { to: '/notificacoes', label: 'Notificações', icon: Bell },
   { to: '/usuarios', label: 'Usuários', icon: Users, requires: 'canManageUsers' as const },
 ]
 
@@ -37,6 +43,12 @@ export default function Layout() {
   const currentLabel = NAV_ITEMS.find((item) =>
     item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)
   )?.label
+
+  const bottomNavConfig =
+    user?.bottomNavConfig && user.bottomNavConfig.length > 0 ? user.bottomNavConfig : DEFAULT_BOTTOM_NAV
+  const bottomNavItems = bottomNavConfig
+    .map((to) => ALL_MOBILE_NAV_OPTIONS.find((o) => o.to === to))
+    .filter((o): o is NonNullable<typeof o> => !!o && (!o.requires || !!user?.[o.requires]))
 
   const sidebarContent = (
     <>
@@ -74,6 +86,19 @@ export default function Layout() {
               {item.label}
             </NavLink>
           ))}
+
+          <NavLink
+            to="/menu-inferior"
+            onClick={() => setMobileOpen(false)}
+            className={({ isActive }) =>
+              `mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors lg:hidden ${
+                isActive ? 'bg-gold text-ink font-semibold' : 'text-ivory/55 hover:bg-ivory/10'
+              }`
+            }
+          >
+            <Smartphone size={16} strokeWidth={1.6} />
+            Menu inferior (celular)
+          </NavLink>
         </nav>
       </div>
 
@@ -119,11 +144,43 @@ export default function Layout() {
         {sidebarContent}
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
           <Outlet />
         </div>
       </main>
+
+      {/* Barra de navegação inferior — só no celular, como um app de
+          verdade. Atalhos configuráveis (até 4) + botão de menu fixo. */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-ink pb-[env(safe-area-inset-bottom)] lg:hidden">
+        <div
+          className="grid gap-0.5 px-1 pt-1.5"
+          style={{ gridTemplateColumns: `repeat(${bottomNavItems.length + 1}, minmax(0, 1fr))` }}
+        >
+          {bottomNavItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
+                  isActive ? 'text-gold' : 'text-ivory/50'
+                }`
+              }
+            >
+              <item.icon size={20} strokeWidth={1.7} />
+              <span className="truncate max-w-full">{item.label}</span>
+            </NavLink>
+          ))}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium text-ivory/50"
+          >
+            <Menu size={20} strokeWidth={1.7} />
+            <span>Menu</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

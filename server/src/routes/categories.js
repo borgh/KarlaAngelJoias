@@ -11,7 +11,7 @@ categoriesRouter.get('/', (req, res) => {
 })
 
 categoriesRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req, res) => {
-  const { name, description, glyph, sortOrder } = req.body || {}
+  const { name, description, glyph, sortOrder, minStockThreshold, notifyChannels } = req.body || {}
   if (!name) return res.status(400).json({ error: 'Nome da categoria é obrigatório.' })
   const category = store.categories.insert({
     id: nanoid(),
@@ -19,6 +19,8 @@ categoriesRouter.post('/admin', requireAuth, requirePermission('canCreate'), (re
     description: description || '',
     glyph: glyph || 'ring',
     sortOrder: Number(sortOrder) || 0,
+    minStockThreshold: minStockThreshold === '' || minStockThreshold === undefined ? null : Number(minStockThreshold),
+    notifyChannels: Array.isArray(notifyChannels) && notifyChannels.length > 0 ? notifyChannels : null,
   })
   res.status(201).json({ category })
 })
@@ -26,12 +28,24 @@ categoriesRouter.post('/admin', requireAuth, requirePermission('canCreate'), (re
 categoriesRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req, res) => {
   const existing = store.categories.find((c) => c.id === req.params.id)
   if (!existing) return res.status(404).json({ error: 'Categoria não encontrada.' })
-  const { name, description, glyph, sortOrder } = req.body || {}
+  const { name, description, glyph, sortOrder, minStockThreshold, notifyChannels } = req.body || {}
   const category = store.categories.update(req.params.id, {
     name: name ?? existing.name,
     description: description ?? existing.description,
     glyph: glyph ?? existing.glyph,
     sortOrder: sortOrder !== undefined ? Number(sortOrder) : existing.sortOrder,
+    minStockThreshold:
+      minStockThreshold !== undefined
+        ? minStockThreshold === '' || minStockThreshold === null
+          ? null
+          : Number(minStockThreshold)
+        : existing.minStockThreshold,
+    notifyChannels:
+      notifyChannels !== undefined
+        ? Array.isArray(notifyChannels) && notifyChannels.length > 0
+          ? notifyChannels
+          : null
+        : existing.notifyChannels,
   })
   res.json({ category })
 })

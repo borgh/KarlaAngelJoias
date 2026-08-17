@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, X } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
-import type { Category } from '../lib/types'
+import type { Category, NotifyChannel } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 
 const GLYPHS: { value: string; label: string }[] = [
@@ -10,13 +10,37 @@ const GLYPHS: { value: string; label: string }[] = [
   { value: 'earring', label: 'Brinco' },
   { value: 'bracelet', label: 'Pulseira / Riviera' },
 ]
-const EMPTY = { name: '', description: '', glyph: 'ring', sortOrder: 0 }
+const CHANNEL_LABELS: { value: NotifyChannel; label: string }[] = [
+  { value: 'push', label: 'Push' },
+  { value: 'email', label: 'E-mail' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+]
+
+type FormState = {
+  name: string
+  description: string
+  glyph: string
+  sortOrder: number
+  minStockThreshold: string
+  notifyChannels: NotifyChannel[]
+  useDefaultChannels: boolean
+}
+
+const EMPTY: FormState = {
+  name: '',
+  description: '',
+  glyph: 'ring',
+  sortOrder: 0,
+  minStockThreshold: '',
+  notifyChannels: [],
+  useDefaultChannels: true,
+}
 
 export default function Categories() {
   const { user } = useAuth()
   const [categories, setCategories] = useState<Category[]>([])
   const [editing, setEditing] = useState<Category | null>(null)
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState<FormState>(EMPTY)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
 
@@ -37,17 +61,42 @@ export default function Categories() {
 
   function openEdit(c: Category) {
     setEditing(c)
-    setForm({ name: c.name, description: c.description, glyph: c.glyph, sortOrder: c.sortOrder })
+    setForm({
+      name: c.name,
+      description: c.description,
+      glyph: c.glyph,
+      sortOrder: c.sortOrder,
+      minStockThreshold: c.minStockThreshold === null ? '' : String(c.minStockThreshold),
+      notifyChannels: c.notifyChannels || [],
+      useDefaultChannels: c.notifyChannels === null,
+    })
     setShowForm(true)
+  }
+
+  function toggleChannel(c: NotifyChannel) {
+    setForm((prev) => ({
+      ...prev,
+      notifyChannels: prev.notifyChannels.includes(c)
+        ? prev.notifyChannels.filter((x) => x !== c)
+        : [...prev.notifyChannels, c],
+    }))
   }
 
   async function handleSave() {
     setError('')
+    const payload = {
+      name: form.name,
+      description: form.description,
+      glyph: form.glyph,
+      sortOrder: form.sortOrder,
+      minStockThreshold: form.minStockThreshold === '' ? null : Number(form.minStockThreshold),
+      notifyChannels: form.useDefaultChannels ? null : form.notifyChannels,
+    }
     try {
       if (editing) {
-        await api.put(`/api/categories/admin/${editing.id}`, form)
+        await api.put(`/api/categories/admin/${editing.id}`, payload)
       } else {
-        await api.post('/api/categories/admin', form)
+        await api.post('/api/categories/admin', payload)
       }
       setShowForm(false)
       await load()
@@ -82,6 +131,9 @@ export default function Categories() {
             <div>
               <p className="font-display text-lg text-ink">{c.name}</p>
               <p className="text-[13px] text-ink/55">{c.description}</p>
+              {c.minStockThreshold !== null && (
+                <p className="mt-1 text-[11px] text-ink/40">Limite mínimo próprio: {c.minStockThreshold}</p>
+              )}
             </div>
             <div className="flex gap-2">
               {user?.canEdit && (
@@ -100,8 +152,8 @@ export default function Categories() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/40 p-4">
+          <div className="my-8 w-full max-w-md rounded-2xl bg-white p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-xl text-ink">{editing ? 'Editar categoria' : 'Nova categoria'}</h2>
               <button onClick={() => setShowForm(false)} className="text-ink/50 hover:text-ink">
@@ -139,6 +191,45 @@ export default function Categories() {
                   ))}
                 </select>
               </div>
+
+              <div className="border-t border-ink/10 pt-4">
+                <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-ink/50">
+                  Estoque — padrão para produtos desta categoria
+                </p>
+                <label className="mb-1 block text-[12px] text-ink/50">
+                  Limite mínimo (em branco = usa o padrão geral)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.minStockThreshold}
+                  onChange={(e) => setForm({ ...form, minStockThreshold: e.target.value })}
+                  className="mb-3 w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
+                />
+                <label className="mb-2 flex items-center gap-2 text-[13px] text-ink/70">
+                  <input
+                    type="checkbox"
+                    checked={form.useDefaultChannels}
+                    onChange={(e) => setForm({ ...form, useDefaultChannels: e.target.checked })}
+                  />
+                  Usar canais de alerta padrão (geral)
+                </label>
+                {!form.useDefaultChannels && (
+                  <div className="flex flex-wrap gap-4 rounded-lg border border-ink/10 p-3">
+                    {CHANNEL_LABELS.map((c) => (
+                      <label key={c.value} className="flex items-center gap-2 text-sm text-ink/75">
+                        <input
+                          type="checkbox"
+                          checked={form.notifyChannels.includes(c.value)}
+                          onChange={() => toggleChannel(c.value)}
+                        />
+                        {c.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {error && <p className="rounded-lg bg-garnet/10 px-3 py-2 text-[13px] text-garnet">{error}</p>}
               <div className="flex justify-end gap-3 pt-2">
                 <button onClick={() => setShowForm(false)} className="rounded-full px-5 py-2.5 text-[13px] font-semibold text-ink/60 hover:bg-ivory-dim">

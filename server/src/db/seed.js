@@ -18,12 +18,23 @@ if (!store.users.find((u) => u.email === ADMIN_EMAIL)) {
     canDelete: true,
     canManageUsers: true,
     isActive: true,
+    bottomNavConfig: [],
     createdAt: nowIso(),
   })
   console.log(`✅ Usuário admin criado: ${ADMIN_EMAIL} / senha: ${ADMIN_PASSWORD}`)
   console.log('   -> troque essa senha assim que fizer o primeiro login.')
 } else {
   console.log(`ℹ️  Usuário admin ${ADMIN_EMAIL} já existe, não foi recriado.`)
+}
+
+// --- Migração: preenche campos novos em registros já existentes ---------
+// (o seed só roda "insert" pra registros que ainda não existem; usuários,
+// produtos e categorias criados antes de uma funcionalidade nova não
+// ganham os campos dela automaticamente — isso resolve isso a cada boot).
+for (const u of store.users.all()) {
+  if (u.bottomNavConfig === undefined) {
+    store.users.update(u.id, { bottomNavConfig: [] })
+  }
 }
 
 // --- Categorias --------------------------------------------------------
@@ -39,17 +50,25 @@ for (const c of categories) {
     store.categories.insert(c)
   }
 }
+for (const c of store.categories.all()) {
+  if (c.minStockThreshold === undefined || c.notifyChannels === undefined) {
+    store.categories.update(c.id, {
+      minStockThreshold: c.minStockThreshold ?? null,
+      notifyChannels: c.notifyChannels ?? null,
+    })
+  }
+}
 
 // --- Produtos (placeholder, editável pelo admin) ------------------------
 const products = [
-  { name: 'Anel Lizzie Cravejado', categoryId: 'aneis', price: 289.9, badge: 'Mais vendido', isBestseller: true },
-  { name: 'Colar Aro Jade', categoryId: 'colares', price: 349.9, badge: 'Novo', isBestseller: true },
-  { name: 'Brinco Lizzie', categoryId: 'brincos', price: 219.9, badge: '', isBestseller: true },
-  { name: 'Riviera Cravejada Dupla', categoryId: 'rivieras', price: 429.9, badge: 'Mais vendido', isBestseller: true },
-  { name: 'Anel Solitário Moissanite', categoryId: 'moissanite', price: 599.9, badge: 'Luxo', isBestseller: true },
-  { name: 'Colar Gota Esmeralda', categoryId: 'colares', price: 379.9, badge: 'Novo', isBestseller: false },
-  { name: 'Ear Cuff Constelação', categoryId: 'brincos', price: 259.9, badge: '', isBestseller: false },
-  { name: 'Riviera Moissanite Tênis', categoryId: 'moissanite', price: 749.9, badge: 'Luxo', isBestseller: true },
+  { name: 'Anel Lizzie Cravejado', categoryId: 'aneis', price: 289.9, badge: 'Mais vendido', isBestseller: true, stockQuantity: 14 },
+  { name: 'Colar Aro Jade', categoryId: 'colares', price: 349.9, badge: 'Novo', isBestseller: true, stockQuantity: 8 },
+  { name: 'Brinco Lizzie', categoryId: 'brincos', price: 219.9, badge: '', isBestseller: true, stockQuantity: 20 },
+  { name: 'Riviera Cravejada Dupla', categoryId: 'rivieras', price: 429.9, badge: 'Mais vendido', isBestseller: true, stockQuantity: 5 },
+  { name: 'Anel Solitário Moissanite', categoryId: 'moissanite', price: 599.9, badge: 'Luxo', isBestseller: true, stockQuantity: 2 },
+  { name: 'Colar Gota Esmeralda', categoryId: 'colares', price: 379.9, badge: 'Novo', isBestseller: false, stockQuantity: 9 },
+  { name: 'Ear Cuff Constelação', categoryId: 'brincos', price: 259.9, badge: '', isBestseller: false, stockQuantity: 11 },
+  { name: 'Riviera Moissanite Tênis', categoryId: 'moissanite', price: 749.9, badge: 'Luxo', isBestseller: true, stockQuantity: 3 },
 ]
 if (store.products.all().length === 0) {
   const now = nowIso()
@@ -65,11 +84,25 @@ if (store.products.all().length === 0) {
       isBestseller: p.isBestseller,
       isActive: true,
       sortOrder: i,
+      stockQuantity: p.stockQuantity,
+      minStockThreshold: null,
+      notifyChannels: null,
+      lowStockNotifiedAt: null,
       createdAt: now,
       updatedAt: now,
     })
   })
   console.log(`✅ ${products.length} produtos de exemplo inseridos.`)
+}
+for (const p of store.products.all()) {
+  if (p.stockQuantity === undefined) {
+    store.products.update(p.id, {
+      stockQuantity: 0,
+      minStockThreshold: p.minStockThreshold ?? null,
+      notifyChannels: p.notifyChannels ?? null,
+      lowStockNotifiedAt: p.lowStockNotifiedAt ?? null,
+    })
+  }
 }
 
 // --- Conteúdo do site (hero, história, rodapé) --------------------------

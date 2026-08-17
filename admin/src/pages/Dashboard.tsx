@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Gem, Tags, Users as UsersIcon, ExternalLink, Star, Image as ImageIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Gem, Tags, Users as UsersIcon, ExternalLink, Star, Image as ImageIcon, AlertTriangle } from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -218,6 +219,21 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {products.some((p) => p.isLowStock) && (
+        <Link
+          to="/estoque"
+          className="mt-6 flex items-center gap-3 rounded-2xl border border-garnet/20 bg-garnet/5 p-5 transition-colors hover:bg-garnet/10"
+        >
+          <AlertTriangle size={20} className="shrink-0 text-garnet" />
+          <div>
+            <p className="text-[14px] font-semibold text-garnet">
+              {products.filter((p) => p.isLowStock).length} produto(s) com estoque baixo
+            </p>
+            <p className="text-[12px] text-garnet/70">Toque para ver e repor no controle de estoque.</p>
+          </div>
+        </Link>
+      )}
 
       {user?.canManageUsers && (
         <div className="mt-6 rounded-2xl border border-ink/10 bg-white p-6">

@@ -12,6 +12,9 @@ import { contentRouter } from './routes/content.js'
 import { carouselRouter } from './routes/carousels.js'
 import { usersRouter } from './routes/users.js'
 import { uploadRouter, UPLOAD_DIR } from './routes/upload.js'
+import { settingsRouter } from './routes/settings.js'
+import { pushRouter } from './routes/push.js'
+import { ensureVapidKeys } from './services/notify.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = process.env.PORT || 4000
@@ -54,11 +57,15 @@ app.use('/api/site-content', contentRouter)
 app.use('/api/carousels', carouselRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/upload', uploadRouter)
+app.use('/api/settings', settingsRouter)
+app.use('/api/push', pushRouter)
 
 app.use((err, req, res, next) => {
   console.error(err)
   res.status(err.status || 500).json({ error: err.message || 'Erro interno.' })
 })
+
+ensureVapidKeys()
 
 app.listen(PORT, () => {
   console.log(`API Karla Angel Joias rodando na porta ${PORT}`)

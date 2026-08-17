@@ -8,6 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
@@ -27,17 +30,13 @@ export default defineConfig({
           { src: '/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
-        // Nunca deixa o service worker servir do cache respostas da API —
-        // o painel admin sempre precisa de dados atuais (produtos,
-        // pedidos, sessão de login etc).
-        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\//,
-            handler: 'NetworkOnly',
-          },
-        ],
+      injectManifest: {
+        // Só pré-cacheia o essencial (app shell) — a API nunca entra
+        // aqui, então não corre risco de servir dado desatualizado.
+        globPatterns: ['**/*.{js,css,html,svg,png}'],
+      },
+      devOptions: {
+        enabled: false,
       },
     }),
   ],

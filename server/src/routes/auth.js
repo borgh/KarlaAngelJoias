@@ -35,3 +35,15 @@ authRouter.post('/logout', (req, res) => {
 authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user })
 })
+
+// Preferência pessoal de cada usuário (quais atalhos aparecem na barra
+// inferior no celular) — não é uma configuração administrativa, por
+// isso fica aqui em vez de em /api/users (que exige canManageUsers).
+authRouter.put('/bottom-nav-config', requireAuth, (req, res) => {
+  const { bottomNavConfig } = req.body || {}
+  if (!Array.isArray(bottomNavConfig)) {
+    return res.status(400).json({ error: 'bottomNavConfig precisa ser uma lista de caminhos.' })
+  }
+  const user = store.users.update(req.user.id, { bottomNavConfig: bottomNavConfig.slice(0, 4) })
+  res.json({ user: serializeUser(user) })
+})

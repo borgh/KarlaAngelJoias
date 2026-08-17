@@ -26,6 +26,34 @@ const DEFAULT_DATA = {
   products: [],
   siteContent: {},
   carouselItems: [],
+  pushSubscriptions: [],
+  settings: {
+    // Estoque — padrões globais, usados quando o produto e a categoria
+    // dele não têm um valor próprio definido.
+    globalMinStockThreshold: 3,
+    globalNotifyChannels: ['email'], // 'push' | 'email' | 'whatsapp'
+
+    smtp: {
+      host: '',
+      port: 587,
+      secure: false,
+      user: '',
+      pass: '',
+      fromName: 'Karla Angel Joias',
+      fromEmail: '',
+      notifyToEmail: '',
+    },
+    whatsapp: {
+      apiUrl: '',
+      apiKey: '',
+      instanceName: '',
+      notifyNumber: '', // formato: 55DDDNUMERO
+    },
+    push: {
+      vapidPublicKey: '',
+      vapidPrivateKey: '',
+    },
+  },
 }
 
 function load() {
@@ -36,7 +64,18 @@ function load() {
   try {
     const raw = fs.readFileSync(DB_FILE, 'utf-8')
     const parsed = JSON.parse(raw)
-    return { ...structuredClone(DEFAULT_DATA), ...parsed }
+    const merged = { ...structuredClone(DEFAULT_DATA), ...parsed }
+    // Merge de um nível a mais para settings/subgrupos, pra não perder
+    // chaves novas (ex: adicionadas em atualização futura do sistema)
+    // quando o arquivo salvo em disco ainda não as tem.
+    merged.settings = {
+      ...structuredClone(DEFAULT_DATA.settings),
+      ...(parsed.settings || {}),
+      smtp: { ...structuredClone(DEFAULT_DATA.settings.smtp), ...(parsed.settings?.smtp || {}) },
+      whatsapp: { ...structuredClone(DEFAULT_DATA.settings.whatsapp), ...(parsed.settings?.whatsapp || {}) },
+      push: { ...structuredClone(DEFAULT_DATA.settings.push), ...(parsed.settings?.push || {}) },
+    }
+    return merged
   } catch (err) {
     console.error('Falha ao ler o banco de dados, recriando do zero:', err)
     save(DEFAULT_DATA)
@@ -106,6 +145,7 @@ export const store = {
   categories: collection('categories'),
   products: collection('products'),
   carouselItems: collection('carouselItems'),
+  pushSubscriptions: collection('pushSubscriptions'),
   siteContent: {
     all() {
       return structuredClone(data.siteContent)
@@ -114,6 +154,22 @@ export const store = {
       data.siteContent = { ...data.siteContent, ...updates }
       save(data)
       return structuredClone(data.siteContent)
+    },
+  },
+  settings: {
+    get() {
+      return structuredClone(data.settings)
+    },
+    update(patch) {
+      data.settings = {
+        ...data.settings,
+        ...patch,
+        smtp: { ...data.settings.smtp, ...(patch.smtp || {}) },
+        whatsapp: { ...data.settings.whatsapp, ...(patch.whatsapp || {}) },
+        push: { ...data.settings.push, ...(patch.push || {}) },
+      }
+      save(data)
+      return structuredClone(data.settings)
     },
   },
 }

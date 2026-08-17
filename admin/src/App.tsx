@@ -9,6 +9,9 @@ import Categories from './pages/Categories'
 import Content from './pages/Content'
 import Carousels from './pages/Carousels'
 import Users from './pages/Users'
+import Stock from './pages/Stock'
+import NotificationSettingsPage from './pages/NotificationSettings'
+import MobileNavSettings from './pages/MobileNavSettings'
 
 function App() {
   return (
@@ -25,9 +28,12 @@ function App() {
           >
             <Route path="/" element={<Dashboard />} />
             <Route path="/produtos" element={<Products />} />
+            <Route path="/estoque" element={<Stock />} />
             <Route path="/categorias" element={<Categories />} />
             <Route path="/conteudo" element={<Content />} />
             <Route path="/carrossel" element={<Carousels />} />
+            <Route path="/notificacoes" element={<NotificationSettingsPage />} />
+            <Route path="/menu-inferior" element={<MobileNavSettings />} />
             <Route
               path="/usuarios"
               element={

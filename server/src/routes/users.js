@@ -40,6 +40,7 @@ usersRouter.post('/', (req, res) => {
     canDelete: !!canDelete,
     canManageUsers: !!canManageUsers,
     isActive: true,
+    bottomNavConfig: [],
     createdAt: nowIso(),
   })
   res.status(201).json({ user: serialize(user) })

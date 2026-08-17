@@ -5,7 +5,12 @@ import type { Product, Category } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 import { ImageUpload } from '../components/ImageUpload'
 
-const EMPTY_FORM: Omit<Product, 'id' | 'createdAt' | 'updatedAt'> = {
+type ProductFormFields = Pick<
+  Product,
+  'name' | 'categoryId' | 'price' | 'badge' | 'description' | 'imageUrl' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
+>
+
+const EMPTY_FORM: ProductFormFields = {
   name: '',
   categoryId: null,
   price: 0,
@@ -15,6 +20,7 @@ const EMPTY_FORM: Omit<Product, 'id' | 'createdAt' | 'updatedAt'> = {
   isBestseller: false,
   isActive: true,
   sortOrder: 0,
+  stockQuantity: 0,
 }
 
 export default function Products() {
@@ -62,6 +68,7 @@ export default function Products() {
       isBestseller: p.isBestseller,
       isActive: p.isActive,
       sortOrder: p.sortOrder,
+      stockQuantity: p.stockQuantity,
     })
     setError('')
     setShowForm(true)
@@ -120,6 +127,7 @@ export default function Products() {
                 <th className="px-5 py-3">Produto</th>
                 <th className="px-5 py-3">Categoria</th>
                 <th className="px-5 py-3">Preço</th>
+                <th className="px-5 py-3">Estoque</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -141,6 +149,11 @@ export default function Products() {
                   <td className="px-5 py-3 text-ink/70">{categoryName(p.categoryId)}</td>
                   <td className="px-5 py-3 text-ink/70">
                     {p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className={`font-semibold ${p.isLowStock ? 'text-garnet' : 'text-ink/70'}`}>
+                      {p.stockQuantity}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     <span
@@ -243,6 +256,22 @@ export default function Products() {
                     className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
+                  Estoque atual
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.stockQuantity}
+                  onChange={(e) => setForm({ ...form, stockQuantity: Number(e.target.value) })}
+                  className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
+                />
+                <p className="mt-1 text-[11px] text-ink/40">
+                  Limite mínimo e canais de alerta ficam na tela de Estoque.
+                </p>
               </div>
 
               <div>
