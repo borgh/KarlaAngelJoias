@@ -24,14 +24,24 @@ Mesmo princípio usado pela concorrência: calibrar arrastando um retângulo at�
 
 Usa **MediaPipe Hands** (`@mediapipe/tasks-vision`, Google) — roda 100% no navegador via WebAssembly, nenhuma foto sai do aparelho do cliente. Fluxo:
 
-1. Usuário abre a câmera, posiciona a mão espalmada + um cartão real na mesma superfície, tira uma foto (frame congelado, não vídeo contínuo).
-2. `HandLandmarker.detect()` roda sobre a foto e localiza os 21 pontos padrão da mão. Localiza a base (`MCP`) do dedo escolhido e sugere uma posição inicial de duas "alcinhas" arrastáveis ali.
-3. Usuário ajusta fino: as alcinhas até a borda real do dedo, e um retângulo até a borda do cartão (mesmo cartão, mesma foto — evita ter que assumir distância/zoom da câmera).
-4. Cálculo: `pxPerMm = larguraCartãoEmPx / 85.6mm` (tamanho ISO de um cartão), depois `diâmetro = larguraDedoEmPx / pxPerMm`.
+1. Usuário abre a câmera, posiciona a mão espalmada + um cartão real na mesma superfície, dentro do guia tracejado mostrado na tela.
+2. **Detecção em tempo real** (modo `VIDEO`, não `IMAGE`): a IA roda continuamente em loop (`requestAnimationFrame` + `detectForVideo`) enquanto a câmera está aberta, não só uma vez na foto já tirada. A borda da câmera e um selo ficam **verdes com "Mão detectada"** assim que a IA encontra a mão — a pessoa pode reposicionar a mão *antes* de capturar, em vez de tirar a foto às cegas e só descobrir depois que não funcionou.
+3. Ao capturar, a foto é congelada e a **última detecção da câmera ao vivo** (já em `lastResultRef`) é reaproveitada — não roda a IA de novo na imagem parada. Localiza a base (`MCP`) do dedo escolhido e posiciona duas "alcinhas" arrastáveis ali.
+4. **Cartão**: o retângulo de calibração nasce na **mesma posição exata do guia tracejado** já mostrado durante a pré-visualização ao vivo (`CARD_GUIDE`, coordenadas compartilhadas entre a tela ao vivo e o pós-captura) — não é uma posição genérica/aleatória. Como o usuário foi instruído a encaixar o cartão real ali, aproveitar essa instrução como âncora é mais confiável do que tentar detectar o objeto por visão computacional.
+5. Usuário ajusta fino: as alcinhas até a borda real do dedo, e o retângulo até a borda do cartão.
+6. Cálculo: `pxPerMm = larguraCartãoEmPx / 85.6mm` (tamanho ISO de um cartão), depois `diâmetro = larguraDedoEmPx / pxPerMm`.
+
+### Por que não usamos detecção automática do cartão por IA
+
+Consideramos usar **OpenCV.js** para detectar o contorno do cartão de verdade na foto (técnica clássica de "leitor de documento": escala de cinza → detecção de bordas → contornos → filtro por proporção retangular). Descartado por um motivo concreto: essa biblioteca tem [bugs documentados e conhecidos de instabilidade com Vite](https://github.com/vitejs/vite/issues/6710) (o bundler usado neste projeto) — risco real de quebrar um recurso que já funciona bem, sem conseguir validar de verdade nesse ambiente de desenvolvimento (mesma limitação de rede que afeta o MediaPipe aqui — ver `docs/troubleshooting.md`). Preferimos a solução do item 4 acima (âncora no guia já mostrado), que é confiável e não depende de uma biblioteca instável.
 
 ### Por que é "semi-automático", não 100% automático
 
 Os pontos do MediaPipe (`landmarks`) são o **esqueleto** da mão (posições de juntas), não a **silhueta**/contorno visual do dedo — não dá pra extrair a largura exata do dedo só com esses pontos. Por isso a IA acelera e direciona (localiza automaticamente onde medir), mas o ajuste fino da largura real continua com o usuário. Essa é uma escolha deliberada de honestidade técnica: melhor prometer "IA ajuda a posicionar, você confirma" do que reivindicar uma detecção 100% automática que os landmarks sozinhos não sustentam.
+
+### Alerta recomendando o celular
+
+A tela inicial da câmera mostra um aviso explicando por que usar o celular dá resultado melhor que o computador: no computador a câmera costuma ser frontal (selfie) e de qualidade mais baixa, dificultando enquadrar a mão numa mesa; no celular, a câmera traseira e a facilidade de apoiar o aparelho dão fotos bem mais nítidas e fáceis de enquadrar.
 
 ### Carregamento sob demanda
 
