@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Camera, CheckCircle2, GripHorizontal, RotateCcw, Smartphone, Sparkles as SparklesIcon } from 'lucide-react'
 import { getHandLandmarker, HAND_LANDMARKS } from '../../lib/handLandmarker'
 import { refineCardRect } from '../../lib/cardDetector'
+import { refineFingerEdges } from '../../lib/fingerEdgeDetector'
 import { CARD_WIDTH_MM, CARD_HEIGHT_MM } from '../../lib/useCardCalibration'
 import { diameterToResult, MIN_CIRCUMFERENCE_MM, MAX_CIRCUMFERENCE_MM } from '../../lib/ringSizeChart'
 import { RingSizeResultCard } from './RingSizeResultCard'
@@ -61,6 +62,7 @@ export function CameraTab() {
   })
   const [fingerHandles, setFingerHandles] = useState({ left: 0.42, right: 0.58, y: 0.3 })
   const [autoDetected, setAutoDetected] = useState(false)
+  const [fingerEdgeConfident, setFingerEdgeConfident] = useState(false)
   const [cardAutoRefined, setCardAutoRefined] = useState(false)
   const [result, setResult] = useState<ReturnType<typeof diameterToResult> | null>(null)
 
@@ -157,11 +159,25 @@ export function CameraTab() {
       const mcp = hand[FINGER_LANDMARK[finger]]
       const wrist = hand[HAND_LANDMARKS.WRIST]
       const handSpan = Math.hypot(mcp.x - wrist.x, mcp.y - wrist.y)
-      const halfWidth = handSpan * 0.16
+      const heuristicHalfWidth = handSpan * 0.16
+      const directionRad = Math.atan2(mcp.y - wrist.y, mcp.x - wrist.x)
+
+      // Antes: só o chute proporcional (16% da distância pulso→base
+      // do dedo) — nunca olhava a imagem de verdade. Agora: varre uma
+      // linha perpendicular ao dedo, ancorada nesse mesmo ponto, e
+      // procura a borda real por gradiente (ver
+      // src/lib/fingerEdgeDetector.ts). Só usa o resultado se a
+      // confiança for razoável; senão cai pro chute mesmo — mais
+      // previsível que confiar numa detecção ambígua.
+      const edgeResult = refineFingerEdges(canvas, mcp.x, mcp.y, directionRad, heuristicHalfWidth)
+      const halfWidth = edgeResult.confidence > 0.5 ? edgeResult.widthFrac / 2 : heuristicHalfWidth
+
       setFingerHandles({ left: mcp.x - halfWidth, right: mcp.x + halfWidth, y: mcp.y })
       setAutoDetected(true)
+      setFingerEdgeConfident(edgeResult.confidence > 0.5)
     } else {
       setAutoDetected(false)
+      setFingerEdgeConfident(false)
     }
 
     // Cartão: começa na mesma região do guia mostrado ao vivo (a
@@ -190,6 +206,7 @@ export function CameraTab() {
     setPhotoUrl('')
     setResult(null)
     setAutoDetected(false)
+    setFingerEdgeConfident(false)
     setCardAutoRefined(false)
     startCamera()
   }
@@ -414,12 +431,17 @@ export function CameraTab() {
       </div>
 
       <p className="text-center text-[12px] text-ivory/50">
-        {autoDetected
-          ? 'IA localizou sua mão. '
-          : 'Não conseguimos localizar a mão automaticamente — posicione as alcinhas manualmente. '}
-        {cardAutoRefined
-          ? 'O quadro do cartão foi encaixado automaticamente pelas bordas — confira e ajuste fino se precisar.'
-          : 'Ajuste o quadro do cartão manualmente até encaixar nas 4 bordas.'}
+        {autoDetected && fingerEdgeConfident && cardAutoRefined
+          ? '✅ IA localizou a mão, a borda do dedo e o cartão automaticamente. Confira se ficou certo antes de confirmar.'
+          : autoDetected && fingerEdgeConfident
+            ? 'IA localizou a mão e mediu a borda real do dedo. '
+            : autoDetected
+              ? 'IA localizou a mão, mas não teve certeza da borda do dedo — confira as alcinhas com atenção. '
+              : 'Não conseguimos localizar a mão automaticamente — posicione as alcinhas manualmente. '}
+        {!(autoDetected && fingerEdgeConfident && cardAutoRefined) &&
+          (cardAutoRefined
+            ? 'O quadro do cartão foi encaixado automaticamente.'
+            : 'Ajuste o quadro do cartão manualmente até encaixar nas 4 bordas.')}
       </p>
       {errorMsg && <p className="max-w-sm text-center text-[13px] text-garnet">{errorMsg}</p>}
 
