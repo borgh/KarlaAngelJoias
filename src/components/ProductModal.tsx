@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { JewelGlyph } from './JewelGlyph'
 import { Sparkles, Shimmer } from './Sparkles'
+import { getStockLabel } from '../lib/stockLabel'
 import type { ProductView } from '../lib/viewTypes'
 
 const formatBRL = (v: number) =>
@@ -18,7 +19,9 @@ export function ProductModal({
 }) {
   return (
     <AnimatePresence>
-      {product && (
+      {product && (() => {
+        const stock = getStockLabel(product)
+        return (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -41,7 +44,11 @@ export function ProductModal({
                 </span>
               )}
               {product.imageUrl ? (
-                <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className={`h-full w-full object-cover ${stock.tone === 'out' ? 'grayscale' : ''}`}
+                />
               ) : (
                 <JewelGlyph type={product.glyph} className="h-32 w-32 text-gold/80" />
               )}
@@ -62,7 +69,20 @@ export function ProductModal({
                 {product.categoryName}
               </p>
               <h2 className="mt-2 font-display text-3xl leading-tight text-ink">{product.name}</h2>
-              <p className="mt-3 text-2xl text-gold">{formatBRL(product.price)}</p>
+              <div className="mt-3 flex items-center gap-3">
+                <p className="text-2xl text-gold">{formatBRL(product.price)}</p>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    stock.tone === 'out'
+                      ? 'bg-ink/5 text-ink/40'
+                      : stock.tone === 'low'
+                        ? 'bg-garnet/10 text-garnet'
+                        : 'bg-green-50 text-green-700'
+                  }`}
+                >
+                  {stock.text}
+                </span>
+              </div>
 
               <p className="mt-5 text-[15px] leading-relaxed text-ink/70">
                 {product.description?.trim()
@@ -70,18 +90,28 @@ export function ProductModal({
                   : 'Peça em acabamento de joalheria — antialérgica e pensada para durar. Fale com a gente no WhatsApp para saber mais detalhes, disponibilidade e possibilidade de personalização.'}
               </p>
 
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-8 rounded-full bg-gold py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-gold-bright"
-              >
-                Comprar no WhatsApp
-              </a>
+              {stock.tone === 'out' ? (
+                <button
+                  disabled
+                  className="mt-8 cursor-not-allowed rounded-full bg-ink/10 py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-ink/40"
+                >
+                  Produto esgotado
+                </button>
+              ) : (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-8 rounded-full bg-gold py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-gold-bright"
+                >
+                  Comprar no WhatsApp
+                </a>
+              )}
             </div>
           </motion.div>
         </motion.div>
-      )}
+        )
+      })()}
     </AnimatePresence>
   )
 }

@@ -15,10 +15,28 @@ function serializeWithStockInfo(row) {
   }
 }
 
+function serializePublic(row) {
+  const { threshold } = resolveStockRules(row)
+  return {
+    id: row.id,
+    name: row.name,
+    categoryId: row.categoryId,
+    price: row.price,
+    badge: row.badge,
+    description: row.description,
+    imageUrl: row.imageUrl,
+    isBestseller: row.isBestseller,
+    sortOrder: row.sortOrder,
+    stockQuantity: row.stockQuantity,
+    isLowStock: row.stockQuantity <= threshold,
+  }
+}
+
 productsRouter.get('/', (req, res) => {
   const products = store.products
     .filter((p) => p.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder || b.createdAt.localeCompare(a.createdAt))
+    .map(serializePublic)
   res.json({ products })
 })
 

@@ -10,6 +10,8 @@ export type ProductView = {
   imageUrl?: string
   description?: string
   isBestseller: boolean
+  stockQuantity: number
+  isLowStock: boolean
 }
 
 export type CategoryView = {

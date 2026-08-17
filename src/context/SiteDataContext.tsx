@@ -14,7 +14,8 @@ type ApiProduct = {
   imageUrl: string
   description: string
   isBestseller: boolean
-  isActive: boolean
+  stockQuantity: number
+  isLowStock: boolean
 }
 type ApiCarouselItem = { id: string; imageUrl: string; title: string; linkUrl: string; isActive: boolean }
 
@@ -43,6 +44,8 @@ const FALLBACK_PRODUCTS: ProductView[] = defaultProducts.map((p) => ({
   badge: p.badge,
   glyph: p.glyph,
   isBestseller: true,
+  stockQuantity: 99,
+  isLowStock: false,
 }))
 
 export function SiteDataProvider({ children }: { children: ReactNode }) {
@@ -80,22 +83,22 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
       }
 
       if (productsRes?.products) {
-        const mapped: ProductView[] = productsRes.products
-          .filter((p) => p.isActive)
-          .map((p) => {
-            const cat = p.categoryId ? categoryMap.get(p.categoryId) : undefined
-            return {
-              id: p.id,
-              name: p.name,
-              categoryName: cat?.name || '—',
-              price: p.price,
-              badge: p.badge || undefined,
-              glyph: cat?.glyph || 'ring',
-              imageUrl: p.imageUrl || undefined,
-              description: p.description || undefined,
-              isBestseller: !!p.isBestseller,
-            }
-          })
+        const mapped: ProductView[] = productsRes.products.map((p) => {
+          const cat = p.categoryId ? categoryMap.get(p.categoryId) : undefined
+          return {
+            id: p.id,
+            name: p.name,
+            categoryName: cat?.name || '—',
+            price: p.price,
+            badge: p.badge || undefined,
+            glyph: cat?.glyph || 'ring',
+            imageUrl: p.imageUrl || undefined,
+            description: p.description || undefined,
+            isBestseller: !!p.isBestseller,
+            stockQuantity: p.stockQuantity ?? 0,
+            isLowStock: !!p.isLowStock,
+          }
+        })
         if (mapped.length > 0) setProducts(mapped)
       }
 

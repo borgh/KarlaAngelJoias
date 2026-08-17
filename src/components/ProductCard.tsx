@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { JewelGlyph } from './JewelGlyph'
 import { Sparkles, Shimmer } from './Sparkles'
+import { getStockLabel } from '../lib/stockLabel'
 import type { ProductView } from '../lib/viewTypes'
 
 const formatBRL = (v: number) =>
@@ -17,6 +18,8 @@ export function ProductCard({
   onSelect: (p: ProductView) => void
   delay?: number
 }) {
+  const stock = getStockLabel(product)
+
   return (
     <motion.div
       role="button"
@@ -44,7 +47,9 @@ export function ProductCard({
           <img
             src={product.imageUrl}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 ${
+              stock.tone === 'out' ? 'grayscale' : ''
+            }`}
           />
         ) : (
           <JewelGlyph
@@ -62,16 +67,35 @@ export function ProductCard({
       </div>
       <p className="text-[11px] uppercase tracking-[0.14em] text-ivory/45">{product.categoryName}</p>
       <h3 className="font-display text-lg text-ivory">{product.name}</h3>
-      <p className="mt-1 text-gold">{formatBRL(product.price)}</p>
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="mt-4 rounded-full border border-ivory/20 py-2.5 text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-ivory transition-colors hover:border-gold hover:bg-gold hover:text-ink"
-      >
-        Comprar no WhatsApp
-      </a>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <p className="text-gold">{formatBRL(product.price)}</p>
+        <p
+          className={`text-[11px] font-semibold ${
+            stock.tone === 'out' ? 'text-ivory/40' : stock.tone === 'low' ? 'text-red-400' : 'text-ivory/40'
+          }`}
+        >
+          {stock.text}
+        </p>
+      </div>
+      {stock.tone === 'out' ? (
+        <button
+          disabled
+          onClick={(e) => e.stopPropagation()}
+          className="mt-4 cursor-not-allowed rounded-full border border-ivory/10 py-2.5 text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-ivory/35"
+        >
+          Esgotado
+        </button>
+      ) : (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-4 rounded-full border border-ivory/20 py-2.5 text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-ivory transition-colors hover:border-gold hover:bg-gold hover:text-ink"
+        >
+          Comprar no WhatsApp
+        </a>
+      )}
     </motion.div>
   )
 }
