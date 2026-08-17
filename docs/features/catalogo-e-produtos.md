@@ -24,3 +24,14 @@ Acessibilidade: o card não é um `<button>` de verdade (teria um link `<a>` de 
 ## Sem descrição cadastrada
 
 Se o produto não tem `description` preenchida no admin, o modal mostra um texto padrão convidando a falar no WhatsApp — nunca fica em branco.
+
+## Estoque em tempo real (sincronizado com o admin)
+
+Cada card e o modal mostram um rótulo de estoque, calculado por `src/lib/stockLabel.ts` (reusado nos dois lugares, pra não divergir):
+- **"Em estoque"** — estoque normal, sem urgência.
+- **"Últimas N unidades"** (vermelho) — quando o produto está no limite mínimo configurado no admin (mesma hierarquia produto → categoria → geral de `docs/features/gestao-de-estoque.md`).
+- **"Esgotado"** — `stockQuantity <= 0`. Foto em escala de cinza, botão de compra vira um botão desativado ("Produto esgotado").
+
+A rota pública `GET /api/products` (`server/src/routes/products.js`, `serializePublic`) calcula `isLowStock` com a mesma função `resolveStockRules()` usada no admin — nunca duplica a regra. Resposta saneada: não expõe `lowStockNotifiedAt`, `minStockThreshold` nem `notifyChannels` (campos internos de gestão, sem uso no site).
+
+**Sincronização**: o site busca produtos da API a cada carregamento de página (sem cache próprio) — qualquer ajuste de estoque feito no admin aparece na próxima vez que alguém abrir ou recarregar o site. Não há atualização "ao vivo" numa aba já aberta (sem WebSocket/polling); se isso vier a ser necessário no futuro, é um ponto de extensão natural.

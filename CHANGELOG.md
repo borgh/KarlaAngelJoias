@@ -6,6 +6,9 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 
 ## 2026-08-17
 
+### Added
+- Estoque real dos produtos exibido no site público, sincronizado com o admin — "Em estoque" / "Últimas N unidades" (urgência real, mesmo limite mínimo configurado no admin) / "Esgotado" (foto em cinza, compra desativada). API pública de produtos saneada, sem expor campos internos de gestão de estoque. `[6c9dd9e]`
+
 ### Fixed
 - Banner de instalar o PWA não aparecia na tela de login — só existia na área autenticada (dentro do `Layout`). Adicionado também em `Login.tsx`, posicionado no topo sem deslocar a centralização do formulário. `[efa00a6]`
 - Convite pra instalar o PWA (`InstallPwaButton`) ficava escondido dentro do menu lateral/gaveta — no celular, ninguém via sem abrir o menu por conta própria. Adicionado `InstallPwaBanner`, visível direto no topo da tela principal só no celular. Lógica de detecção extraída pra um hook compartilhado (`usePwaInstall.ts`). Testado simulando o evento `beforeinstallprompt` em 3 cenários (Android, iOS, Desktop). `[cb24c6c]`
