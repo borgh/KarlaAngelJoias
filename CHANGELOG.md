@@ -12,6 +12,7 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 - Estoque real dos produtos exibido no site público, sincronizado com o admin — "Em estoque" / "Últimas N unidades" (urgência real, mesmo limite mínimo configurado no admin) / "Esgotado" (foto em cinza, compra desativada). API pública de produtos saneada, sem expor campos internos de gestão de estoque. `[6c9dd9e]`
 
 ### Added
+- Medição real da largura do dedo por detecção de borda (gradiente perpendicular ao eixo do dedo), substituindo o chute proporcional fixo (16% da distância pulso→dedo) usado antes. Validado com teste sintético: ~99,9% de precisão no dedo reto, ~95% em ângulo. Bug real corrigido no processo: a perpendicular podia inverter esquerda/direita dependendo do ângulo do dedo (largura media certo, mas os pontos vinham trocados). Mensagem de status agora reflete os 3 níveis de automação (mão + borda do dedo + cartão). `[f0ed342]`
 - Detecção automática do cartão por bordas (gradiente Sobel + busca em grade, sem dependência nova) no medidor de anel — best-effort, testado e documentado honestamente (melhora ~50% a posição mas não converge perfeito de forma confiável; ajuste manual continua disponível). Bolinhas do dedo redesenhadas de preenchimento sólido pra "mira" vazada, deixando ver a borda real do dedo por baixo. `[3cd0adc]`
 
 ### Fixed

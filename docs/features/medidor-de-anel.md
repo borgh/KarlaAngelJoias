@@ -64,6 +64,14 @@ Fórmulas em `ringSizeChart.ts`, validadas contra pontos de referência cruzados
 
 Validade assumida: 38mm–75mm de circunferência (`MIN_CIRCUMFERENCE_MM`/`MAX_CIRCUMFERENCE_MM`) — fora dessa faixa, a ferramenta avisa que o valor parece incomum em vez de mostrar um resultado sem sentido.
 
+### Medição real da largura do dedo (não mais um chute)
+
+`src/lib/fingerEdgeDetector.ts`, função `refineFingerEdges()` — antes, a largura do dedo usada pra posicionar as alcinhas era só um chute proporcional fixo (16% da distância pulso→base do dedo), sem nunca olhar a imagem de verdade. Agora: varre uma linha **perpendicular ao eixo do dedo** (calculado a partir do vetor pulso→base já detectado pelo MediaPipe), ancorada nesse mesmo ponto, e procura o pico de gradiente (Sobel) de cada lado — a borda real (transição pele→fundo), medida de verdade na foto. Mesma filosofia de busca local ancorada do detector de cartão.
+
+**Precisão validada** com imagem sintética antes de integrar: dedo reto ≈ 99,9% de precisão (erro de 0,3px numa largura de 40px); dedo em ângulo de 20° ≈ 95% de precisão. Usa a distância euclidiana real entre as duas bordas encontradas (não só a diferença em X), senão fotos com o dedo em ângulo teriam a largura subestimada.
+
+Só usa o resultado da detecção quando a confiança for razoável (>50%, calculada pela força do pico de gradiente encontrado comparada à média do perfil); caso contrário cai pro chute proporcional antigo — mais previsível que confiar numa detecção ambígua (mesmo padrão de "melhor esforço com fallback gracioso" usado em todo o recurso).
+
 ### Detecção automática do cartão por bordas (best-effort)
 
 `src/lib/cardDetector.ts`, função `refineCardRect()` — depois de capturar, refina automaticamente a posição/tamanho/rotação do quadro de calibração, tentando encaixar nas bordas reais do cartão detectadas na foto. Técnica: gradiente Sobel (magnitude de borda) + busca em duas fases — uma grade grosseira de posição/escala primeiro (evita ficar "preso" numa região sem gradiente, problema real encontrado testando a primeira versão), seguida de refinamento fino por coordinate descent. Roda em ~75-150ms, 100% no navegador, sem dependência nova.
