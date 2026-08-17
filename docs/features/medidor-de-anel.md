@@ -64,6 +64,24 @@ Fórmulas em `ringSizeChart.ts`, validadas contra pontos de referência cruzados
 
 Validade assumida: 38mm–75mm de circunferência (`MIN_CIRCUMFERENCE_MM`/`MAX_CIRCUMFERENCE_MM`) — fora dessa faixa, a ferramenta avisa que o valor parece incomum em vez de mostrar um resultado sem sentido.
 
+### Ponto de medição correto: meio do dedo, não a base
+
+Erro real encontrado em uso: as alcinhas ficavam na altura da palma da mão. Causa: o código usava só a **MCP** (junta da base do dedo) — é ali que o MediaPipe "nomeia" o dedo, mas um anel **não** fica ali; fica na falange proximal, **entre a MCP e a PIP** (primeira dobra). Corrigido usando o ponto médio MCP↔PIP como ponto de medição, e a direção MCP→PIP (eixo real da falange) em vez de pulso→base (orientação geral da mão, que diverge do dedo quando ele está afastado dos outros). Ver `HAND_LANDMARKS` em `src/lib/handLandmarker.ts` — cada dedo tem 4 pontos (MCP → PIP → DIP → TIP).
+
+### Checagem ao vivo do cartão no guia
+
+`checkCardInGuide()` em `src/lib/cardDetector.ts` — roda a cada 3 frames durante a pré-visualização (junto com a detecção de mão), em resolução baixa (160px) pra não travar a câmera. Três critérios, todos obrigatórios: (1) borda absoluta forte no perímetro do guia, (2) perímetro bem mais forte que o entorno imediato (mesa lisa), (3) **nenhum dos 4 lados individualmente fraco** — é esse critério que distingue "mão cobrindo o cartão" (uma borda inteira some por onde a mão entra) de "cartão levemente torto" (as 4 bordas continuam lá).
+
+Calibrado com 6 cenários sintéticos, todos corretos: aprova cartão realista (chip/texto/logo), torto a 5° e a 10°; reprova mão cobrindo o cartão, só a mesa, mão sem cartão. Foram necessárias 3 iterações de métrica — a primeira (perímetro/interior) confundia cartão realista com coberto; a segunda (perímetro/fora) ainda deixava passar mão sobre o cartão; a terceira (adicionando o critério por-lado) separou tudo com folga.
+
+Na interface ao vivo, dois indicadores **separados** ("Mão" e "Cartão"), cada um verde independentemente, com mensagem contextual dizendo o que ainda falta ajustar. Quando os dois estão OK: borda verde, "✅ pode capturar", botão vira "Capturar agora". O objetivo é **guiar a pessoa pra tirar uma foto boa** antes de capturar — que é o que realmente determina o resultado, muito mais que qualquer processamento depois.
+
+### Alternativas mais "avançadas" avaliadas e descartadas
+
+**Segment Anything (SAM / SAM2, Meta)** — modelo de segmentação com precisão de pixel, seria o ideal em teoria pra recortar o dedo e o cartão exatamente. Descartado por um motivo concreto de viabilidade: [rodando no navegador via WebAssembly, o encoder leva ~45 segundos, impraticável](https://github.com/microsoft/onnxruntime-inference-examples/tree/main/js/segment-anything); só fica rápido com WebGPU em GPUs recentes, que muitos celulares dos clientes não têm. Pra uma loja onde qualquer cliente precisa conseguir usar, isso é um risco inaceitável — melhor uma técnica mais simples que funciona em qualquer aparelho e guia bem a foto.
+
+**OpenCV.js** — ver seção "Detecção automática do cartão por bordas" acima; descartado por bugs documentados de instabilidade com Vite.
+
 ### Medição real da largura do dedo (não mais um chute)
 
 `src/lib/fingerEdgeDetector.ts`, função `refineFingerEdges()` — antes, a largura do dedo usada pra posicionar as alcinhas era só um chute proporcional fixo (16% da distância pulso→base do dedo), sem nunca olhar a imagem de verdade. Agora: varre uma linha **perpendicular ao eixo do dedo** (calculado a partir do vetor pulso→base já detectado pelo MediaPipe), ancorada nesse mesmo ponto, e procura o pico de gradiente (Sobel) de cada lado — a borda real (transição pele→fundo), medida de verdade na foto. Mesma filosofia de busca local ancorada do detector de cartão.
