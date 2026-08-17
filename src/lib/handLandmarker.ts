@@ -44,10 +44,23 @@ export function getHandLandmarker(): Promise<HandLandmarkerType> {
 }
 
 // Índices dos pontos de referência da mão (padrão MediaPipe, 21 pontos).
+//
+// Cada dedo tem 4 pontos, do mais próximo da mão pro mais distante:
+//   MCP (base, junta com a mão) → PIP (primeira dobra) → DIP → TIP (ponta)
+//
+// Um anel NÃO fica na base (MCP) — fica na falange proximal, ou seja,
+// ENTRE a MCP e a PIP. Por isso o ponto de medição correto é o ponto
+// médio entre esses dois landmarks, não a MCP sozinha (erro real
+// encontrado em uso: as alcinhas ficavam na junta da base do dedo, na
+// altura da palma, em vez de na altura onde o anel realmente é usado).
 export const HAND_LANDMARKS = {
   WRIST: 0,
   INDEX_MCP: 5,
+  INDEX_PIP: 6,
   MIDDLE_MCP: 9,
+  MIDDLE_PIP: 10,
   RING_MCP: 13,
+  RING_PIP: 14,
   PINKY_MCP: 17,
+  PINKY_PIP: 18,
 } as const

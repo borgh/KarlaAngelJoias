@@ -205,3 +205,120 @@ export function refineCardRect(canvas: HTMLCanvasElement, initial: CardRectState
   }
   return best
 }
+
+// Checagem LEVE, pra rodar ao vivo a cada frame da câmera (junto com
+// a detecção de mão): o guia tracejado parece ter um cartão bem
+// posicionado dentro? Compara a força de borda ao longo do perímetro
+// do guia com a força média do interior — um cartão real bem
+// encaixado tem bordas fortes no perímetro e interior relativamente
+// uniforme; se a mão estiver cobrindo o cartão, ou se não tiver
+// cartão nenhum ali (só a mesa), essa razão fica baixa.
+//
+// Usa uma resolução BEM menor que o refinamento pós-captura (160px de
+// largura em vez de 320) — precisa ser rápido o bastante pra rodar
+// dezenas de vezes por segundo sem travar a câmera.
+export function checkCardInGuide(
+  video: HTMLVideoElement,
+  guide: CardRectState,
+  scratchCanvas: HTMLCanvasElement
+): { present: boolean; score: number } {
+  const w = 160
+  const h = Math.round((video.videoHeight / video.videoWidth) * w)
+  if (!Number.isFinite(h) || h <= 0) return { present: false, score: 0 }
+  scratchCanvas.width = w
+  scratchCanvas.height = h
+  const ctx = scratchCanvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return { present: false, score: 0 }
+  ctx.drawImage(video, 0, 0, w, h)
+  const map = buildGradientMapFromCanvas(scratchCanvas)
+
+  const rad = (guide.rotationDeg * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const hw = guide.w / 2
+  const hh = guide.h / 2
+  const N = 12
+  const toWorld = (lx: number, ly: number) => ({
+    x: guide.cx + (lx * cos - ly * sin),
+    y: guide.cy + (lx * sin + ly * cos),
+  })
+
+  // Amostra o perímetro do guia (onde a borda do cartão DEVERIA estar)
+  // e um "anel" logo por FORA do guia (a mesa ao redor). Um cartão
+  // real bem posicionado dá borda FORTE no perímetro e borda FRACA
+  // logo fora (mesa lisa). Se a mão estiver cobrindo o cartão, a
+  // borda do perímetro fica fraca/borrada E aparecem transições fora
+  // do guia também (o contorno da mão) — a razão perímetro/fora cai.
+  // Se não tiver cartão nenhum, os dois ficam fracos.
+  //
+  // Essa métrica é melhor que "perímetro / interior" (versão anterior)
+  // porque não penaliza um cartão REALISTA cheio de chip/texto/logo
+  // no miolo — o miolo pode ter textura à vontade, o que importa é o
+  // contorno externo estar nítido e o entorno estar limpo.
+  let perimeter = 0
+  let outside = 0
+  const OUT = 1.25 // anel externo a 25% além da borda
+  // Também acumula por lado individualmente — a mão cobrindo o
+  // cartão sempre "quebra" pelo menos uma borda inteira (por onde a
+  // mão entra), enquanto um cartão só levemente torto mantém as 4
+  // bordas todas fortes. Essa é a distinção que a razão global
+  // sozinha não consegue fazer com segurança.
+  const sideSums = [0, 0, 0, 0]
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1) - 0.5
+    const sides = [
+      [t * guide.w, -hh, t * guide.w, -hh * OUT],
+      [t * guide.w, hh, t * guide.w, hh * OUT],
+      [-hw, t * guide.h, -hw * OUT, t * guide.h],
+      [hw, t * guide.h, hw * OUT, t * guide.h],
+    ]
+    sides.forEach(([lx, ly, ox, oy], sideIdx) => {
+      const p = toWorld(lx, ly)
+      const g = sampleGrad(map, p.x, p.y)
+      perimeter += g
+      sideSums[sideIdx] += g
+      const o = toWorld(ox, oy)
+      outside += sampleGrad(map, o.x, o.y)
+    })
+  }
+  const perimeterAvg = perimeter / (N * 4)
+  const outsideAvg = outside / (N * 4) || 1
+  const weakestSideAvg = Math.min(...sideSums) / N
+
+  // Três critérios, todos obrigatórios:
+  //  1. Borda absoluta forte no perímetro (>= 25, escala Sobel 0-255)
+  //  2. Perímetro bem mais forte que o entorno imediato (razão >= 2.5)
+  //  3. NENHUM lado individual fraco (o mais fraco >= 15) — é isso
+  //     que reprova "mão cobrindo o cartão" (uma borda inteira some)
+  //     sem reprovar "cartão levemente torto" (todas continuam lá)
+  // Limiares calibrados com teste sintético cobrindo: cartão liso,
+  // cartão realista com chip/texto/logo, cartão torto (10°), mão
+  // realista cobrindo metade do cartão, só a mesa, mão sem cartão.
+  const score = perimeterAvg / outsideAvg
+  return { present: perimeterAvg >= 25 && score >= 2.5 && weakestSideAvg >= 15, score }
+}
+
+// Versão do buildGradientMap que aceita um canvas já no tamanho
+// desejado (sem re-escalar), pra reuso pela checagem ao vivo.
+function buildGradientMapFromCanvas(canvas: HTMLCanvasElement): { data: Float32Array; w: number; h: number } {
+  const w = canvas.width
+  const h = canvas.height
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+  const { data: rgba } = ctx.getImageData(0, 0, w, h)
+  const gray = new Float32Array(w * h)
+  for (let i = 0; i < w * h; i++) {
+    gray[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2]
+  }
+  const grad = new Float32Array(w * h)
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x
+      const gx =
+        -gray[i - w - 1] - 2 * gray[i - 1] - gray[i + w - 1] + gray[i - w + 1] + 2 * gray[i + 1] + gray[i + w + 1]
+      const gy =
+        -gray[i - w - 1] - 2 * gray[i - w] - gray[i - w + 1] + gray[i + w - 1] + 2 * gray[i + w] + gray[i + w + 1]
+      grad[i] = Math.sqrt(gx * gx + gy * gy)
+    }
+  }
+  return { data: grad, w, h }
+}

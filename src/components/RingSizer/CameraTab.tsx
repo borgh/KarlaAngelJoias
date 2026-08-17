@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Camera, CheckCircle2, GripHorizontal, RotateCcw, Smartphone, Sparkles as SparklesIcon } from 'lucide-react'
 import { getHandLandmarker, HAND_LANDMARKS } from '../../lib/handLandmarker'
-import { refineCardRect } from '../../lib/cardDetector'
+import { refineCardRect, checkCardInGuide } from '../../lib/cardDetector'
 import { refineFingerEdges } from '../../lib/fingerEdgeDetector'
 import { CARD_WIDTH_MM, CARD_HEIGHT_MM } from '../../lib/useCardCalibration'
 import { diameterToResult, MIN_CIRCUMFERENCE_MM, MAX_CIRCUMFERENCE_MM } from '../../lib/ringSizeChart'
@@ -11,11 +11,11 @@ import type { HandLandmarkerResult } from '@mediapipe/tasks-vision'
 type Stage = 'intro' | 'requesting' | 'live' | 'error' | 'captured'
 type Finger = 'index' | 'middle' | 'ring' | 'pinky'
 
-const FINGER_LANDMARK: Record<Finger, number> = {
-  index: HAND_LANDMARKS.INDEX_MCP,
-  middle: HAND_LANDMARKS.MIDDLE_MCP,
-  ring: HAND_LANDMARKS.RING_MCP,
-  pinky: HAND_LANDMARKS.PINKY_MCP,
+const FINGER_LANDMARKS: Record<Finger, { mcp: number; pip: number }> = {
+  index: { mcp: HAND_LANDMARKS.INDEX_MCP, pip: HAND_LANDMARKS.INDEX_PIP },
+  middle: { mcp: HAND_LANDMARKS.MIDDLE_MCP, pip: HAND_LANDMARKS.MIDDLE_PIP },
+  ring: { mcp: HAND_LANDMARKS.RING_MCP, pip: HAND_LANDMARKS.RING_PIP },
+  pinky: { mcp: HAND_LANDMARKS.PINKY_MCP, pip: HAND_LANDMARKS.PINKY_PIP },
 }
 const FINGER_LABEL: Record<Finger, string> = {
   index: 'Indicador',
@@ -44,6 +44,8 @@ export function CameraTab() {
   const [errorMsg, setErrorMsg] = useState('')
   const [finger, setFinger] = useState<Finger>('ring')
   const [handDetected, setHandDetected] = useState(false)
+  const [cardReady, setCardReady] = useState(false)
+  const scratchCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -89,6 +91,7 @@ export function CameraTab() {
     getHandLandmarker()
       .then((landmarker) => {
         if (cancelled) return
+        let frameCounter = 0
         const loop = () => {
           if (cancelled || !videoRef.current) return
           if (videoRef.current.videoWidth > 0) {
@@ -98,6 +101,27 @@ export function CameraTab() {
               setHandDetected((result.landmarks?.length ?? 0) > 0)
             } catch {
               // Frame ocasional pode falhar (câmera ainda ajustando) — sem problema, tenta de novo no próximo.
+            }
+
+            // Checagem do cartão a cada 3 frames (não precisa ser a
+            // cada frame — é o suficiente pra reagir rápido e não
+            // sobrecarrega o processamento junto com a detecção de mão).
+            frameCounter++
+            if (frameCounter % 3 === 0) {
+              try {
+                if (!scratchCanvasRef.current) scratchCanvasRef.current = document.createElement('canvas')
+                const guide = {
+                  cx: CARD_GUIDE.x + CARD_GUIDE.width / 2,
+                  cy: CARD_GUIDE_TOP + CARD_GUIDE_HEIGHT / 2,
+                  w: CARD_GUIDE.width,
+                  h: CARD_GUIDE_HEIGHT,
+                  rotationDeg: 0,
+                }
+                const check = checkCardInGuide(videoRef.current, guide, scratchCanvasRef.current)
+                setCardReady(check.present)
+              } catch {
+                // idem — frame ruim, tenta no próximo
+              }
             }
           }
           rafRef.current = requestAnimationFrame(loop)
@@ -120,6 +144,7 @@ export function CameraTab() {
     setStage('requesting')
     setErrorMsg('')
     setHandDetected(false)
+    setCardReady(false)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } },
@@ -156,23 +181,37 @@ export function CameraTab() {
     // confirmado como "mão detectada" antes de tirar a foto.
     const hand = lastResultRef.current?.landmarks?.[0]
     if (hand) {
-      const mcp = hand[FINGER_LANDMARK[finger]]
-      const wrist = hand[HAND_LANDMARKS.WRIST]
-      const handSpan = Math.hypot(mcp.x - wrist.x, mcp.y - wrist.y)
-      const heuristicHalfWidth = handSpan * 0.16
-      const directionRad = Math.atan2(mcp.y - wrist.y, mcp.x - wrist.x)
+      const { mcp: mcpIdx, pip: pipIdx } = FINGER_LANDMARKS[finger]
+      const mcp = hand[mcpIdx]
+      const pip = hand[pipIdx]
 
-      // Antes: só o chute proporcional (16% da distância pulso→base
-      // do dedo) — nunca olhava a imagem de verdade. Agora: varre uma
-      // linha perpendicular ao dedo, ancorada nesse mesmo ponto, e
-      // procura a borda real por gradiente (ver
-      // src/lib/fingerEdgeDetector.ts). Só usa o resultado se a
-      // confiança for razoável; senão cai pro chute mesmo — mais
-      // previsível que confiar numa detecção ambígua.
-      const edgeResult = refineFingerEdges(canvas, mcp.x, mcp.y, directionRad, heuristicHalfWidth)
+      // Ponto de medição = meio da falange proximal (entre a base do
+      // dedo e a primeira dobra) — é onde um anel de fato fica.
+      // Antes usava só a MCP (base), o que colocava as alcinhas na
+      // altura da palma da mão (bug real visto em uso).
+      const measureX = (mcp.x + pip.x) / 2
+      const measureY = (mcp.y + pip.y) / 2
+
+      // Direção do dedo = vetor MCP→PIP (o eixo real da falange que
+      // estamos medindo), não mais pulso→base (que segue a orientação
+      // geral da mão, e pode divergir do dedo em si se ele estiver
+      // afastado dos outros).
+      const directionRad = Math.atan2(pip.y - mcp.y, pip.x - mcp.x)
+
+      // Chute inicial da meia-largura, proporcional ao comprimento da
+      // falange (dedos mais longos costumam ser mais grossos) —
+      // serve só como tamanho de janela pra busca de borda abaixo.
+      const phalanxLen = Math.hypot(pip.x - mcp.x, pip.y - mcp.y)
+      const heuristicHalfWidth = phalanxLen * 0.42
+
+      // Mede a borda REAL varrendo perpendicular ao dedo (ver
+      // src/lib/fingerEdgeDetector.ts). Só usa se a confiança for
+      // razoável; senão cai pro chute — mais previsível que confiar
+      // numa detecção ambígua.
+      const edgeResult = refineFingerEdges(canvas, measureX, measureY, directionRad, heuristicHalfWidth)
       const halfWidth = edgeResult.confidence > 0.5 ? edgeResult.widthFrac / 2 : heuristicHalfWidth
 
-      setFingerHandles({ left: mcp.x - halfWidth, right: mcp.x + halfWidth, y: mcp.y })
+      setFingerHandles({ left: measureX - halfWidth, right: measureX + halfWidth, y: measureY })
       setAutoDetected(true)
       setFingerEdgeConfident(edgeResult.confidence > 0.5)
     } else {
@@ -346,17 +385,20 @@ export function CameraTab() {
   }
 
   if (stage === 'live') {
+    const allReady = handDetected && cardReady
     return (
       <div className="flex flex-col items-center gap-5">
         <div
           className={`relative w-full max-w-sm overflow-hidden rounded-2xl bg-black ring-2 transition-colors duration-300 ${
-            handDetected ? 'ring-green-400' : 'ring-transparent'
+            allReady ? 'ring-green-400' : 'ring-transparent'
           }`}
         >
           <video ref={videoRef} playsInline muted className="w-full" />
+          {/* Guia do cartão — fica VERDE só quando o cartão é detectado
+              dentro dele (não coberto pela mão, bordas visíveis). */}
           <div
             className={`pointer-events-none absolute rounded-md border-2 border-dashed transition-colors duration-300 ${
-              handDetected ? 'border-green-400' : 'border-gold/70'
+              cardReady ? 'border-green-400' : 'border-gold/70'
             }`}
             style={{
               left: `${CARD_GUIDE.x * 100}%`,
@@ -365,31 +407,49 @@ export function CameraTab() {
               aspectRatio: `${CARD_WIDTH_MM} / ${CARD_HEIGHT_MM}`,
             }}
           />
-          <div
-            className={`absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-300 ${
-              handDetected ? 'bg-green-500 text-white' : 'bg-ink/70 text-ivory/80'
-            }`}
-          >
-            {handDetected ? (
-              <>
-                <CheckCircle2 size={13} /> Mão detectada
-              </>
-            ) : (
-              'Posicione sua mão'
-            )}
+
+          {/* Dois indicadores separados — a pessoa vê exatamente O QUE
+              ainda falta ajustar (mão? cartão? os dois?), em vez de um
+              único "verde/não-verde" sem explicação. */}
+          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 gap-2">
+            <span
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                handDetected ? 'bg-green-500 text-white' : 'bg-ink/70 text-ivory/70'
+              }`}
+            >
+              {handDetected ? <CheckCircle2 size={12} /> : <span className="h-3 w-3 rounded-full border border-ivory/50" />}
+              Mão
+            </span>
+            <span
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors duration-300 ${
+                cardReady ? 'bg-green-500 text-white' : 'bg-ink/70 text-ivory/70'
+              }`}
+            >
+              {cardReady ? <CheckCircle2 size={12} /> : <span className="h-3 w-3 rounded-full border border-ivory/50" />}
+              Cartão
+            </span>
           </div>
         </div>
+
         <p className="max-w-xs text-center text-[12px] text-ivory/50">
-          Dedos esticados, palma pra cima, câmera de cima olhando pra baixo. Encaixe o cartão dentro da guia
-          tracejada
-          {!handDetected && ' — aguarde o indicador ficar verde antes de capturar.'}
+          {allReady
+            ? '✅ Mão e cartão detectados — pode capturar.'
+            : !handDetected && !cardReady
+              ? 'Dedos esticados, palma pra cima, câmera de cima. Encaixe o cartão dentro do guia tracejado, sem cobrir com a mão.'
+              : !handDetected
+                ? 'Cartão OK. Agora deixe a mão espalmada, dedos esticados, bem visível.'
+                : 'Mão OK. Agora encaixe o cartão dentro do guia tracejado, sem a mão em cima dele.'}
         </p>
         {errorMsg && <p className="text-[13px] text-garnet">{errorMsg}</p>}
         <button
           onClick={capture}
-          className="flex items-center gap-2 rounded-full bg-gold px-8 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-ink transition-colors hover:bg-gold-bright"
+          className={`flex items-center gap-2 rounded-full px-8 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] transition-colors ${
+            allReady
+              ? 'bg-green-500 text-white hover:bg-green-400'
+              : 'bg-gold text-ink hover:bg-gold-bright'
+          }`}
         >
-          <Camera size={16} /> Capturar foto
+          <Camera size={16} /> {allReady ? 'Capturar agora' : 'Capturar foto'}
         </button>
         <canvas ref={canvasRef} className="hidden" />
       </div>
