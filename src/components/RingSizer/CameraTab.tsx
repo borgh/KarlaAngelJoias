@@ -478,8 +478,17 @@ export function CameraTab() {
 
   return (
     <div className="flex flex-col items-center gap-5">
-      <div className="relative w-full max-w-sm select-none overflow-hidden rounded-2xl">
-        <img src={photoUrl} alt="Foto capturada" className="w-full" draggable={false} />
+      {/* Sem overflow-hidden aqui — é essa div que serve de referência
+          de posição (%) pros controles (cartão, alcinhas). Se
+          cortasse o conteúdo, a alça de girar (agora abaixo do
+          cartão) ficaria invisível E fora de alcance de clique,
+          "vazando" o clique pro que estiver embaixo na página (bug
+          real encontrado ao mover a alça pra baixo). O corte de
+          cantos arredondados fica só na foto em si, na div de dentro. */}
+      <div className="relative w-full max-w-sm select-none">
+        <div className="overflow-hidden rounded-2xl">
+          <img src={photoUrl} alt="Foto capturada" className="w-full" draggable={false} />
+        </div>
 
         <DraggableCard rect={cardRect} onChange={setCardRect} label="Cartão" />
 
@@ -496,8 +505,8 @@ export function CameraTab() {
           <span className="mt-0.5 h-3 w-3 shrink-0 rounded-sm border-2 border-gold" />
           <span>
             <strong>Quadro dourado (cartão)</strong> — arraste pelo meio pra mover, pelo <strong>canto</strong> pra
-            redimensionar livremente, e pela <strong>alça de cima</strong> pra girar até acompanhar a inclinação real
-            do cartão na foto. Encaixe nas 4 bordas.
+            redimensionar livremente, e pela <strong>alça de baixo</strong> pra girar até acompanhar a inclinação
+            real do cartão na foto. Encaixe nas 4 bordas.
           </span>
         </p>
         <p className="flex items-start gap-2 text-[12px] leading-relaxed text-red-300">
@@ -612,9 +621,12 @@ function DraggableCard({
       return
     }
 
-    // rotate
+    // rotate — 0° agora significa "alça apontando pra baixo" (onde
+    // ela descansa sem nenhuma rotação aplicada), já que a alça foi
+    // movida pra parte de baixo do cartão. Por isso NÃO inverte o
+    // sinal de dy aqui (antes invertia, porque a alça ficava em cima).
     const centerPx = { x: start.rect.cx * container.width + container.left, y: start.rect.cy * container.height + container.top }
-    const angle = (Math.atan2(e.clientX - centerPx.x, -(e.clientY - centerPx.y)) * 180) / Math.PI
+    const angle = (Math.atan2(e.clientX - centerPx.x, e.clientY - centerPx.y) * 180) / Math.PI
     onChange({ ...start.rect, rotationDeg: angle })
   }
 
@@ -643,14 +655,18 @@ function DraggableCard({
         {label}
       </span>
 
-      {/* alça de rotação */}
+      {/* alça de rotação — fica embaixo do cartão de propósito (não em
+          cima), porque as bolinhas de ajuste do dedo normalmente
+          ficam ACIMA do cartão na foto — deixar a alça de girar
+          também em cima competia visualmente e no espaço de clique
+          com elas. */}
       <div
         onPointerDown={(e) => beginDrag(e, 'rotate')}
-        className="absolute left-1/2 top-0 flex h-6 w-6 -translate-x-1/2 -translate-y-[150%] cursor-grab items-center justify-center rounded-full border-2 border-gold bg-ink"
+        className="absolute left-1/2 top-full flex h-6 w-6 -translate-x-1/2 translate-y-[150%] cursor-grab items-center justify-center rounded-full border-2 border-gold bg-ink"
       >
         <RotateCcw size={12} className="text-gold" />
       </div>
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[50%] w-px -translate-x-1/2 -translate-y-full bg-gold/50" />
+      <div className="pointer-events-none absolute left-1/2 top-full h-[50%] w-px -translate-x-1/2 bg-gold/50" />
 
       {/* alça de redimensionar (canto inferior direito) */}
       <div
