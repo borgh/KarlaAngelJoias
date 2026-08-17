@@ -6,7 +6,9 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 
 ## 2026-08-17
 
-### Added
+### Fixed
+- Tela de Notificações (e outras 5 telas do admin) travava em "Carregando..." indefinidamente depois de um deploy — causa dupla: service worker do PWA servia JS antigo em cache pra navegação (corrigido com `NetworkFirst` só na navegação), e as funções de carregamento de dados não garantiam `setLoading(false)` em caso de erro (corrigido com `try/finally` em todas). `[b0d4857]`
+- Documentação completa do sistema criada em `docs/`, mesmo padrão do VBMA — arquitetura, API, telas, funcionalidades, variáveis de ambiente e troubleshooting. `[538bea3]`
 - WhatsApp via QR code — instância própria (`karlaangeljoias`) no mesmo servidor Evolution API já usado pelo VBMA, sem nunca expor URL/chave no código ou no banco (só variáveis de ambiente do container, mesmo padrão do `JWT_SECRET`). Tela de Notificações ganhou um card "Conectar WhatsApp" com QR code real, polling automático de status a cada 3s até conectar, e botão de desconectar. `[be3164a]`
 - Gestão de estoque completa: `stockQuantity`, `minStockThreshold` e `notifyChannels` nos produtos, com hierarquia produto → categoria → padrão geral. Nova tela `/estoque` (busca, filtro de estoque baixo, ajuste rápido +/-, modal de configuração por produto). Aviso de estoque baixo no Dashboard. `[1820955]`
 - Notificações multi-canal: e-mail (SMTP configurável, nodemailer), WhatsApp (Evolution API) e push (Web Push/VAPID), com deduplicação — só notifica quando o estoque cruza o limite mínimo pra baixo, não fica repetindo. Nova tela `/notificacoes` com formulários e botões de teste pra cada canal. Chaves VAPID geradas automaticamente no primeiro boot da API. `[1820955]`

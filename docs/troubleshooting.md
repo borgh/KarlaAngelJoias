@@ -54,7 +54,19 @@ Formato: **Problema** → **Causa** → **Solução**. Se o que você está vend
 
 ---
 
-## Menu inferior "sumindo e voltando" itens ao excluir vários
+## Tela travava em "Carregando..." pra sempre depois de um deploy do admin
+
+**Problema**: depois de publicar uma mudança no admin (troca da tela de WhatsApp de campos manuais pra QR code), a tela de Notificações ficava presa em "Carregando..." indefinidamente — só resolvia com Ctrl+Shift+R (hard refresh).
+
+**Causa, duas partes**:
+1. O service worker do PWA usa `precacheAndRoute` (Workbox), que por padrão serve **cache-primeiro** pra tudo, inclusive a navegação/HTML — quem já tinha o painel aberto (ou instalado) continuava rodando o JS **antigo**, cacheado antes do deploy, que esperava um formato de resposta da API diferente do que a API (já atualizada) realmente mandava.
+2. Em várias telas, a função `load()` só chamava `setLoading(false)` **depois** de processar a resposta com sucesso — se o passo acima causasse um erro no meio (acessar um campo que não existe mais, por exemplo), a função nunca chegava no `setLoading(false)`, travando a tela pra sempre.
+
+**Solução**: (1) service worker mudou pra `NetworkFirst` especificamente na navegação/HTML (`admin/src/sw.js`) — sempre busca a versão mais nova quando há conexão, só usa cache se estiver genuinamente offline; (2) todas as funções `load()` das telas do admin envolvidas em `try/finally`, garantindo que `setLoading(false)` sempre executa, e a tela de Notificações especificamente ganhou uma mensagem de erro com botão "Tentar de novo" em vez de tela em branco/travada.
+
+---
+
+
 
 **Problema**: excluir itens do carrossel do Instagram em sequência rápida parecia "recriar" itens já excluídos, voltando pro número original.
 
