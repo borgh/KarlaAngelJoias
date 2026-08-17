@@ -5,6 +5,7 @@ Documentos que explicam **como** cada sistema complexo funciona de verdade — n
 | Documento | Cobre |
 |---|---|
 | [catalogo-e-produtos.md](./catalogo-e-produtos.md) | Site público: cards, modal de detalhes, seção "Mais vendidos" vs. "Catálogo completo" |
+| [medidor-de-anel.md](./medidor-de-anel.md) | Medidor de anel com IA (3 camadas: manual, tela, câmera com MediaPipe Hands) |
 | [gestao-de-estoque.md](./gestao-de-estoque.md) | Hierarquia de limite mínimo (produto → categoria → geral), tela de Estoque |
 | [notificacoes-de-estoque.md](./notificacoes-de-estoque.md) | Os 3 canais (push, e-mail, WhatsApp), deduplicação, integração com Evolution API |
 | [pwa-admin.md](./pwa-admin.md) | Manifest, service worker, botão de instalação |

@@ -7,6 +7,7 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 ## 2026-08-17
 
 ### Added
+- Medidor de anel com IA no site público, 3 camadas (manual / anel na tela / câmera com MediaPipe Hands rodando no navegador) — pesquisado após analisar o medidor da concorrência (Gazin) e o estado da arte do mercado. Câmera detecta automaticamente a base do dedo via visão computacional (21 pontos da mão), usuário confirma o ajuste fino; calibração de escala por cartão real na mesma foto. Carregamento sob demanda (só baixa o modelo de IA quando a câmera é usada). Dois bugs reais encontrados e corrigidos durante o desenvolvimento: tabela de conversão UK incorreta, e um bug de timing (`<video>` não existia no DOM ainda) que gerava resultado "NaN". `[5c3a9e9]`
 - Estoque real dos produtos exibido no site público, sincronizado com o admin — "Em estoque" / "Últimas N unidades" (urgência real, mesmo limite mínimo configurado no admin) / "Esgotado" (foto em cinza, compra desativada). API pública de produtos saneada, sem expor campos internos de gestão de estoque. `[6c9dd9e]`
 
 ### Fixed
