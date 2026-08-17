@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { InstallPwaButton } from './InstallPwaButton'
+import { InstallPwaBanner } from './InstallPwaBanner'
 import { ALL_MOBILE_NAV_OPTIONS, DEFAULT_BOTTOM_NAV } from '../config/mobileNavOptions'
 
 const NAV_ITEMS = [
@@ -145,6 +146,7 @@ export default function Layout() {
       </aside>
 
       <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <InstallPwaBanner />
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
           <Outlet />
         </div>
