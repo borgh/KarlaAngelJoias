@@ -220,10 +220,7 @@ export function CameraTab() {
     }
 
     // Cartão: começa na mesma região do guia mostrado ao vivo (a
-    // pessoa foi instruída a encaixar o cartão ali), depois tenta
-    // refinar automaticamente encaixando nas bordas reais detectadas
-    // na foto (ver src/lib/cardDetector.ts) — se não conseguir
-    // melhorar de forma confiável, mantém a posição do guia mesmo.
+    // pessoa foi instruída a encaixar o cartão ali).
     const guessedCardRect = {
       cx: CARD_GUIDE.x + CARD_GUIDE.width / 2,
       cy: CARD_GUIDE_TOP + CARD_GUIDE_HEIGHT / 2,
@@ -231,9 +228,32 @@ export function CameraTab() {
       h: CARD_GUIDE_HEIGHT,
       rotationDeg: 0,
     }
-    const refined = refineCardRect(canvas, guessedCardRect)
-    setCardRect(refined)
-    setCardAutoRefined(refined !== guessedCardRect)
+
+    // Se a checagem AO VIVO (checkCardInGuide, rodando quadro a
+    // quadro na pré-visualização) já confirmou que o cartão estava
+    // bem encaixado no guia — ou seja, o indicador "Cartão" já tinha
+    // ficado verde antes de capturar — usa essa posição diretamente,
+    // SEM rodar o refinamento pós-captura de novo.
+    //
+    // Por quê: o refinamento pós-captura (refineCardRect, busca em
+    // grade + coordinate descent) é sabidamente imperfeito — já
+    // documentado que não converge perfeito de forma confiável (ver
+    // docs/features/medidor-de-anel.md). Rodar essa busca imperfeita
+    // por cima de uma posição que a checagem ao vivo JÁ confirmou como
+    // correta só cria risco de desalinhar algo que já estava certo
+    // (bug real relatado: cartão bem posicionado na câmera ao vivo,
+    // mas o quadro saía errado depois de capturar — exatamente esse
+    // problema). O refinamento pós-captura continua existindo como
+    // reserva pra quando NÃO tivemos essa confirmação ao vivo — nesse
+    // caso, uma busca imperfeita ainda é melhor que nenhuma tentativa.
+    if (cardReady) {
+      setCardRect(guessedCardRect)
+      setCardAutoRefined(true)
+    } else {
+      const refined = refineCardRect(canvas, guessedCardRect)
+      setCardRect(refined)
+      setCardAutoRefined(refined !== guessedCardRect)
+    }
 
     streamRef.current?.getTracks().forEach((t) => t.stop())
     setPhotoUrl(canvas.toDataURL('image/jpeg', 0.92))
@@ -483,8 +503,9 @@ export function CameraTab() {
         <p className="flex items-start gap-2 text-[12px] leading-relaxed text-red-300">
           <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full border-2 border-red-400" />
           <span>
-            <strong>Bolinhas vermelhas</strong> — arraste cada uma até tocar a <strong>borda lateral do dedo</strong>{' '}
-            (a largura dele, não a ponta). Pra subir ou descer o par inteiro de uma vez (sem perder o espaçamento
+            <strong>Bolinhas vermelhas</strong> — o <strong>centro da cruz</strong> (não a bolinha inteira) marca o
+            ponto exato. Arraste cada uma até o centro da cruz tocar a <strong>borda lateral do dedo</strong> (a
+            largura dele, não a ponta). Pra subir ou descer o par inteiro de uma vez (sem perder o espaçamento
             entre elas), arraste a <strong className="text-gold">alça dourada</strong> no meio da linha.
           </span>
         </p>
