@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, CheckCircle2, ChevronsUpDown, RotateCcw, Smartphone, Sparkles as SparklesIcon } from 'lucide-react'
+import { Camera, CheckCircle2, GripHorizontal, RotateCcw, Smartphone, Sparkles as SparklesIcon } from 'lucide-react'
 import { getHandLandmarker, HAND_LANDMARKS } from '../../lib/handLandmarker'
 import { CARD_WIDTH_MM, CARD_HEIGHT_MM } from '../../lib/useCardCalibration'
 import { diameterToResult, MIN_CIRCUMFERENCE_MM, MAX_CIRCUMFERENCE_MM } from '../../lib/ringSizeChart'
@@ -360,7 +360,7 @@ export function CameraTab() {
           <span>
             <strong>Bolinhas vermelhas</strong> — arraste cada uma até tocar a <strong>borda lateral do dedo</strong>{' '}
             (a largura dele, não a ponta). Pra subir ou descer o par inteiro de uma vez (sem perder o espaçamento
-            entre elas), arraste pela <strong>alcinha com a setinha ↕</strong> no meio da linha.
+            entre elas), arraste a <strong className="text-gold">alça dourada</strong> no meio da linha.
           </span>
         </p>
       </div>
@@ -562,8 +562,8 @@ function FingerHandles({
         }}
       >
         <div className="pointer-events-none h-0.5 w-full bg-red-400" />
-        <div className="pointer-events-none absolute flex h-6 w-9 items-center justify-center gap-0.5 rounded-full border border-red-300 bg-red-500/80 shadow">
-          <ChevronsUpDown size={13} className="text-white" strokeWidth={2.5} />
+        <div className="pointer-events-none absolute flex h-7 w-11 animate-pulse items-center justify-center rounded-full border-2 border-ivory bg-gold shadow-lg">
+          <GripHorizontal size={16} className="text-ink" strokeWidth={2.5} />
         </div>
       </div>
       {[
