@@ -24,9 +24,12 @@ export default function Users() {
   const [loading, setLoading] = useState(true)
 
   async function load() {
-    const data = await api.get<{ users: User[] }>('/api/users')
-    setUsers(data.users)
-    setLoading(false)
+    try {
+      const data = await api.get<{ users: User[] }>('/api/users')
+      setUsers(data.users)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {

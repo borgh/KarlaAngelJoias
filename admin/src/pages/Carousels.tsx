@@ -14,9 +14,12 @@ export default function Carousels() {
   const [savingId, setSavingId] = useState<string | null>(null)
 
   async function load() {
-    const data = await api.get<{ items: CarouselItem[] }>(`/api/carousels/${CAROUSEL_NAME}/admin`)
-    setItems(data.items)
-    setLoading(false)
+    try {
+      const data = await api.get<{ items: CarouselItem[] }>(`/api/carousels/${CAROUSEL_NAME}/admin`)
+      setItems(data.items)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {

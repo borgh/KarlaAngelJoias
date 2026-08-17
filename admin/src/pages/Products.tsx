@@ -36,13 +36,16 @@ export default function Products() {
 
   async function load() {
     setLoading(true)
-    const [p, c] = await Promise.all([
-      api.get<{ products: Product[] }>('/api/products/admin'),
-      api.get<{ categories: Category[] }>('/api/categories'),
-    ])
-    setProducts(p.products)
-    setCategories(c.categories)
-    setLoading(false)
+    try {
+      const [p, c] = await Promise.all([
+        api.get<{ products: Product[] }>('/api/products/admin'),
+        api.get<{ categories: Category[] }>('/api/categories'),
+      ])
+      setProducts(p.products)
+      setCategories(c.categories)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {

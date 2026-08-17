@@ -39,19 +39,22 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function load() {
-      const [p, c, ig] = await Promise.all([
-        api.get<{ products: Product[] }>('/api/products/admin'),
-        api.get<{ categories: Category[] }>('/api/categories'),
-        api.get<{ items: CarouselItem[] }>('/api/carousels/instagram/admin'),
-      ])
-      setProducts(p.products)
-      setCategories(c.categories)
-      setIgItems(ig.items)
-      if (user?.canManageUsers) {
-        const u = await api.get<{ users: User[] }>('/api/users')
-        setUsers(u.users)
+      try {
+        const [p, c, ig] = await Promise.all([
+          api.get<{ products: Product[] }>('/api/products/admin'),
+          api.get<{ categories: Category[] }>('/api/categories'),
+          api.get<{ items: CarouselItem[] }>('/api/carousels/instagram/admin'),
+        ])
+        setProducts(p.products)
+        setCategories(c.categories)
+        setIgItems(ig.items)
+        if (user?.canManageUsers) {
+          const u = await api.get<{ users: User[] }>('/api/users')
+          setUsers(u.users)
+        }
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
   }, [user])

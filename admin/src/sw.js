@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+import { registerRoute, NavigationRoute } from 'workbox-routing'
+import { NetworkFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 
 self.skipWaiting()
@@ -12,6 +14,21 @@ clientsClaim()
 // rede, com dados sempre atuais.
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
+
+// IMPORTANTE: a navegação (abrir/recarregar a página) usa "rede
+// primeiro, cache como reserva" em vez do cache-primeiro padrão do
+// precache. Sem isso, depois de um deploy novo, quem já tinha o
+// painel aberto (ou instalado como PWA) continuava recebendo o HTML/JS
+// ANTIGO do cache — que podia não bater mais com o formato de dados da
+// API já atualizada, travando telas em "Carregando..." pra sempre até
+// um F5 forçado (Ctrl+Shift+R). Com rede primeiro, a versão mais nova
+// é buscada sempre que houver conexão; só cai pro cache se estiver
+// offline de verdade.
+const navigationHandler = new NetworkFirst({
+  cacheName: 'karlaangel-admin-pages',
+  networkTimeoutSeconds: 3,
+})
+registerRoute(new NavigationRoute(navigationHandler))
 
 // --- Notificações push (alertas de estoque baixo) -----------------------
 self.addEventListener('push', (event) => {

@@ -46,27 +46,40 @@ export default function NotificationSettingsPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   async function load() {
-    const data = await api.get<{ settings: NotificationSettings }>('/api/settings/notifications')
-    setSettings(data.settings)
-    setGlobalThreshold(data.settings.globalMinStockThreshold)
-    setGlobalChannels(data.settings.globalNotifyChannels)
-    setSmtpHost(data.settings.smtp.host)
-    setSmtpPort(data.settings.smtp.port)
-    setSmtpSecure(data.settings.smtp.secure)
-    setSmtpUser(data.settings.smtp.user)
-    setSmtpFromName(data.settings.smtp.fromName)
-    setSmtpFromEmail(data.settings.smtp.fromEmail)
-    setSmtpNotifyTo(data.settings.smtp.notifyToEmail)
-    setWaNotifyNumber(data.settings.whatsappNotifyNumber)
-    setLoading(false)
+    try {
+      const data = await api.get<{ settings: NotificationSettings }>('/api/settings/notifications')
+      setSettings(data.settings)
+      setGlobalThreshold(data.settings.globalMinStockThreshold)
+      setGlobalChannels(data.settings.globalNotifyChannels)
+      setSmtpHost(data.settings.smtp.host)
+      setSmtpPort(data.settings.smtp.port)
+      setSmtpSecure(data.settings.smtp.secure)
+      setSmtpUser(data.settings.smtp.user)
+      setSmtpFromName(data.settings.smtp.fromName)
+      setSmtpFromEmail(data.settings.smtp.fromEmail)
+      setSmtpNotifyTo(data.settings.smtp.notifyToEmail)
+      setWaNotifyNumber(data.settings.whatsappNotifyNumber)
 
-    const perm = await getPushPermissionState()
-    setPushState(perm)
-    const sub = await getCurrentSubscription()
-    setPushSubscribed(!!sub)
+      const perm = await getPushPermissionState()
+      setPushState(perm)
+      const sub = await getCurrentSubscription()
+      setPushSubscribed(!!sub)
 
-    if (data.settings.whatsappServerConfigured) {
-      refreshWhatsAppStatus()
+      if (data.settings.whatsappServerConfigured) {
+        refreshWhatsAppStatus()
+      }
+    } catch (err) {
+      // Nunca deixa a tela travada em "Carregando..." pra sempre — se
+      // algo inesperado falhar (rede, resposta em formato diferente do
+      // esperado por uma versão em cache antiga do PWA, etc.), mostra
+      // o erro e oferece recarregar em vez de ficar preso.
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : 'Não foi possível carregar as configurações. Tente recarregar a página.'
+      )
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -224,7 +237,25 @@ export default function NotificationSettingsPage() {
     }
   }
 
-  if (loading || !settings) return <p className="text-ink/50">Carregando…</p>
+  if (loading) return <p className="text-ink/50">Carregando…</p>
+  if (!settings) {
+    return (
+      <div>
+        <p className="mb-4 rounded-lg bg-garnet/10 px-4 py-2.5 text-[13px] text-garnet">
+          {error || 'Não foi possível carregar as configurações.'}
+        </p>
+        <button
+          onClick={() => {
+            setLoading(true)
+            load()
+          }}
+          className="rounded-full bg-gold px-6 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-ink hover:bg-gold-bright"
+        >
+          Tentar de novo
+        </button>
+      </div>
+    )
+  }
 
   const canEdit = !!user?.canEdit
   const waConnected = waStatus?.state === 'open'
