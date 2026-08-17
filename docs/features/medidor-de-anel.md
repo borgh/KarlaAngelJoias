@@ -64,6 +64,14 @@ Fórmulas em `ringSizeChart.ts`, validadas contra pontos de referência cruzados
 
 Validade assumida: 38mm–75mm de circunferência (`MIN_CIRCUMFERENCE_MM`/`MAX_CIRCUMFERENCE_MM`) — fora dessa faixa, a ferramenta avisa que o valor parece incomum em vez de mostrar um resultado sem sentido.
 
+### Diagrama de posicionamento e erro diagnóstico
+
+Um erro real de uso mostrou que texto sozinho não bastava: usuários fotografavam a palma virada de frente pra câmera (mão levantada, segurando o cartão) em vez de deitar a mão numa mesa e fotografar de cima — os dedos ficavam cortados ou dobrados fora do enquadramento certo, resultando num valor calculado sem sentido.
+
+Duas correções:
+1. **Diagrama esquemático** (SVG simples) na tela inicial da câmera, mostrando visualmente a vista de cima da mão numa mesa com o cartão ao lado, e o ícone de câmera olhando pra baixo.
+2. **Mensagem de erro diagnóstica**: em vez de só "fora da faixa", mostra o valor real calculado (ex: "86mm de circunferência") e uma explicação de causa provável (alcinhas muito perto/longe uma da outra, ou quadro do cartão desproporcional ao cartão real na foto) — dá pra pessoa entender em que direção ajustar, em vez de só saber que deu errado.
+
 ## Limitações conhecidas (comunicadas ao cliente na própria tela de resultado)
 
 - É uma medida aproximada — a mensagem final sempre recomenda considerar um número abaixo pra anéis anatômicos/largos, e falar no WhatsApp em caso de dúvida entre dois tamanhos.
