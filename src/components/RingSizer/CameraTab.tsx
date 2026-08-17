@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Camera, CheckCircle2, GripHorizontal, RotateCcw, Smartphone, Sparkles as SparklesIcon } from 'lucide-react'
 import { getHandLandmarker, HAND_LANDMARKS } from '../../lib/handLandmarker'
+import { refineCardRect } from '../../lib/cardDetector'
 import { CARD_WIDTH_MM, CARD_HEIGHT_MM } from '../../lib/useCardCalibration'
 import { diameterToResult, MIN_CIRCUMFERENCE_MM, MAX_CIRCUMFERENCE_MM } from '../../lib/ringSizeChart'
 import { RingSizeResultCard } from './RingSizeResultCard'
@@ -60,6 +61,7 @@ export function CameraTab() {
   })
   const [fingerHandles, setFingerHandles] = useState({ left: 0.42, right: 0.58, y: 0.3 })
   const [autoDetected, setAutoDetected] = useState(false)
+  const [cardAutoRefined, setCardAutoRefined] = useState(false)
   const [result, setResult] = useState<ReturnType<typeof diameterToResult> | null>(null)
 
   useEffect(() => {
@@ -162,15 +164,21 @@ export function CameraTab() {
       setAutoDetected(false)
     }
 
-    // Cartão: posição inicial = a mesma região do guia mostrado ao
-    // vivo (a pessoa foi instruída a encaixar o cartão ali).
-    setCardRect({
+    // Cartão: começa na mesma região do guia mostrado ao vivo (a
+    // pessoa foi instruída a encaixar o cartão ali), depois tenta
+    // refinar automaticamente encaixando nas bordas reais detectadas
+    // na foto (ver src/lib/cardDetector.ts) — se não conseguir
+    // melhorar de forma confiável, mantém a posição do guia mesmo.
+    const guessedCardRect = {
       cx: CARD_GUIDE.x + CARD_GUIDE.width / 2,
       cy: CARD_GUIDE_TOP + CARD_GUIDE_HEIGHT / 2,
       w: CARD_GUIDE.width,
       h: CARD_GUIDE_HEIGHT,
       rotationDeg: 0,
-    })
+    }
+    const refined = refineCardRect(canvas, guessedCardRect)
+    setCardRect(refined)
+    setCardAutoRefined(refined !== guessedCardRect)
 
     streamRef.current?.getTracks().forEach((t) => t.stop())
     setPhotoUrl(canvas.toDataURL('image/jpeg', 0.92))
@@ -182,6 +190,7 @@ export function CameraTab() {
     setPhotoUrl('')
     setResult(null)
     setAutoDetected(false)
+    setCardAutoRefined(false)
     startCamera()
   }
 
@@ -406,8 +415,11 @@ export function CameraTab() {
 
       <p className="text-center text-[12px] text-ivory/50">
         {autoDetected
-          ? 'IA localizou sua mão — o resto é só um ajuste fino.'
-          : 'Não conseguimos localizar a mão automaticamente — posicione manualmente com calma, sem pressa.'}
+          ? 'IA localizou sua mão. '
+          : 'Não conseguimos localizar a mão automaticamente — posicione as alcinhas manualmente. '}
+        {cardAutoRefined
+          ? 'O quadro do cartão foi encaixado automaticamente pelas bordas — confira e ajuste fino se precisar.'
+          : 'Ajuste o quadro do cartão manualmente até encaixar nas 4 bordas.'}
       </p>
       {errorMsg && <p className="max-w-sm text-center text-[13px] text-garnet">{errorMsg}</p>}
 
@@ -580,28 +592,33 @@ function FingerHandles({
       onPointerMove={handlePointerMove}
       onPointerUp={() => (draggingHandle.current = null)}
     >
-      {/* Faixa de arrastar VERTICAL — move o par inteiro (as duas
-          alças juntas, mantendo a distância entre elas) pra cima/baixo,
-          pra encaixar na altura certa do dedo. Área de clique bem maior
-          que a linha fina visível (2px é difícil demais de "pegar" com
-          precisão), com uma pegador central pra deixar claro que dá
-          pra arrastar. */}
+      {/* Linha fina vermelha — só visual, conecta as duas bolinhas
+          (não interativa, pra não competir com a área de clique
+          delas — ver alça de arrastar abaixo). */}
+      <div
+        className="pointer-events-none absolute h-0.5 -translate-y-1/2 bg-red-400"
+        style={{ left: `${left * 100}%`, right: `${(1 - right) * 100}%`, top: `${y * 100}%` }}
+      />
+
+      {/* Alça de arrastar VERTICAL — move o par inteiro (as duas
+          bolinhas juntas, mantendo a distância entre elas) pra cima/
+          baixo, pra encaixar na altura certa do dedo. Fica deslocada
+          ABAIXO da linha (não em cima dela) de propósito — se ficasse
+          na mesma posição das bolinhas, a área de clique maior delas
+          (pra facilitar tocar no celular) acaba competindo/
+          sobrepondo o espaço da alça quando as bolinhas estão
+          próximas uma da outra, dificultando ou impedindo o
+          arrastar vertical (bug real encontrado em teste). */}
       <div
         onPointerDown={(e) => {
           draggingHandle.current = 'line'
           ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
         }}
-        className="absolute flex -translate-y-1/2 cursor-ns-resize items-center justify-center"
-        style={{
-          left: `${left * 100}%`,
-          right: `${(1 - right) * 100}%`,
-          top: `${y * 100}%`,
-          height: 32,
-          pointerEvents: 'auto',
-        }}
+        className="absolute flex -translate-x-1/2 cursor-ns-resize flex-col items-center"
+        style={{ left: `${((left + right) / 2) * 100}%`, top: `${y * 100}%`, pointerEvents: 'auto' }}
       >
-        <div className="pointer-events-none h-0.5 w-full bg-red-400" />
-        <div className="pointer-events-none absolute flex h-7 w-11 animate-pulse items-center justify-center rounded-full border-2 border-ivory bg-gold shadow-lg">
+        <div className="pointer-events-none h-4 w-px bg-red-400/60" />
+        <div className="pointer-events-none flex h-7 w-11 animate-pulse items-center justify-center rounded-full border-2 border-ivory bg-gold shadow-lg">
           <GripHorizontal size={16} className="text-ink" strokeWidth={2.5} />
         </div>
       </div>
@@ -615,9 +632,19 @@ function FingerHandles({
             draggingHandle.current = h.key
             ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
           }}
-          className="absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-full border-2 border-red-400 bg-red-400/40"
+          className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize"
           style={{ left: `${h.x * 100}%`, top: `${y * 100}%`, pointerEvents: 'auto' }}
-        />
+        >
+          {/* Mira vazada — sem preenchimento sólido, pra não tampar a
+              vista da borda real do dedo bem no ponto que importa.
+              Anel branco externo (contraste em qualquer tom de pele) +
+              anel vermelho interno mais fino + cruz central marcando o
+              ponto exato. */}
+          <div className="pointer-events-none absolute inset-0 rounded-full border-2 border-white/95 drop-shadow-[0_0_2px_rgba(0,0,0,0.6)]" />
+          <div className="pointer-events-none absolute inset-[6px] rounded-full border-2 border-red-500" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-px -translate-x-1/2 -translate-y-1/2 bg-white" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-px w-2.5 -translate-x-1/2 -translate-y-1/2 bg-white" />
+        </div>
       ))}
     </div>
   )
