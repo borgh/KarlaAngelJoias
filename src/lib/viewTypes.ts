@@ -8,6 +8,7 @@ export type ProductView = {
   badge?: string
   glyph: Glyph
   imageUrl?: string
+  images: string[]
   description?: string
   isBestseller: boolean
   stockQuantity: number

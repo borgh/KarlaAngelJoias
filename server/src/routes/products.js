@@ -6,6 +6,16 @@ import { checkAndNotifyLowStock, resolveStockRules } from '../services/notify.js
 
 export const productsRouter = Router()
 
+const MAX_PRODUCT_IMAGES = 5
+
+// Garante um array de até 5 URLs de imagem válidas — usado tanto na
+// criação quanto na edição, pra nunca deixar salvar mais que o limite
+// nem lixo (valores vazios/não-string) vindo do cliente.
+function sanitizeImages(images) {
+  if (!Array.isArray(images)) return []
+  return images.filter((url) => typeof url === 'string' && url.trim() !== '').slice(0, MAX_PRODUCT_IMAGES)
+}
+
 function serializeWithStockInfo(row) {
   const { threshold } = resolveStockRules(row)
   return {
@@ -17,6 +27,7 @@ function serializeWithStockInfo(row) {
 
 function serializePublic(row) {
   const { threshold } = resolveStockRules(row)
+  const images = Array.isArray(row.images) ? row.images : row.imageUrl ? [row.imageUrl] : []
   return {
     id: row.id,
     name: row.name,
@@ -24,7 +35,8 @@ function serializePublic(row) {
     price: row.price,
     badge: row.badge,
     description: row.description,
-    imageUrl: row.imageUrl,
+    images,
+    imageUrl: images[0] || '', // compatibilidade: quem ainda ler só imageUrl continua funcionando
     isBestseller: row.isBestseller,
     sortOrder: row.sortOrder,
     stockQuantity: row.stockQuantity,
@@ -66,6 +78,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     badge,
     description,
     imageUrl,
+    images,
     isBestseller,
     sortOrder,
     stockQuantity,
@@ -76,6 +89,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     return res.status(400).json({ error: 'Nome do produto é obrigatório.' })
   }
   const now = nowIso()
+  const sanitizedImages = sanitizeImages(images ?? (imageUrl ? [imageUrl] : []))
   const product = store.products.insert({
     id: nanoid(),
     name,
@@ -83,7 +97,8 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     price: Number(price) || 0,
     badge: badge || '',
     description: description || '',
-    imageUrl: imageUrl || '',
+    imageUrl: sanitizedImages[0] || '',
+    images: sanitizedImages,
     isBestseller: !!isBestseller,
     isActive: true,
     sortOrder: Number(sortOrder) || 0,
@@ -109,6 +124,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     badge,
     description,
     imageUrl,
+    images,
     isBestseller,
     isActive,
     sortOrder,
@@ -117,13 +133,17 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     notifyChannels,
   } = req.body || {}
 
+  const sanitizedImages =
+    images !== undefined ? sanitizeImages(images) : imageUrl !== undefined ? sanitizeImages([imageUrl]) : undefined
+
   const product = store.products.update(req.params.id, {
     name: name ?? existing.name,
     categoryId: categoryId !== undefined ? categoryId : existing.categoryId,
     price: price !== undefined ? Number(price) : existing.price,
     badge: badge ?? existing.badge,
     description: description ?? existing.description,
-    imageUrl: imageUrl ?? existing.imageUrl,
+    images: sanitizedImages ?? existing.images ?? [],
+    imageUrl: (sanitizedImages ?? existing.images ?? [])[0] || '',
     isBestseller: isBestseller !== undefined ? !!isBestseller : existing.isBestseller,
     isActive: isActive !== undefined ? !!isActive : existing.isActive,
     sortOrder: sortOrder !== undefined ? Number(sortOrder) : existing.sortOrder,

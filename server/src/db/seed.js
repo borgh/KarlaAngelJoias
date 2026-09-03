@@ -81,6 +81,7 @@ if (store.products.all().length === 0) {
       badge: p.badge,
       description: '',
       imageUrl: '',
+      images: [],
       isBestseller: p.isBestseller,
       isActive: true,
       sortOrder: i,
@@ -101,6 +102,14 @@ for (const p of store.products.all()) {
       minStockThreshold: p.minStockThreshold ?? null,
       notifyChannels: p.notifyChannels ?? null,
       lowStockNotifiedAt: p.lowStockNotifiedAt ?? null,
+    })
+  }
+  // Migração: imageUrl único (campo antigo) -> images (array, até 5).
+  // Produtos criados antes dessa funcionalidade tinham só imageUrl;
+  // aproveita ela como primeira foto da galeria, sem perder nada.
+  if (p.images === undefined) {
+    store.products.update(p.id, {
+      images: p.imageUrl ? [p.imageUrl] : [],
     })
   }
 }

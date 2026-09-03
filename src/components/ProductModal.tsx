@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Ruler } from 'lucide-react'
-import { JewelGlyph } from './JewelGlyph'
-import { Sparkles, Shimmer } from './Sparkles'
+import { ProductImageCarousel } from './ProductImageCarousel'
 import { getStockLabel } from '../lib/stockLabel'
 import { RingSizerModal } from './RingSizer/RingSizerModal'
 import type { ProductView } from '../lib/viewTypes'
@@ -40,24 +39,14 @@ export function ProductModal({
             onClick={(e) => e.stopPropagation()}
             className="grid max-h-[88vh] w-full max-w-3xl grid-cols-1 overflow-y-auto rounded-2xl bg-ivory shadow-2xl sm:grid-cols-2"
           >
-            <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-ink sm:aspect-auto">
-              {product.badge && (
-                <span className="absolute left-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink">
-                  {product.badge}
-                </span>
-              )}
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className={`h-full w-full object-cover ${stock.tone === 'out' ? 'grayscale' : ''}`}
-                />
-              ) : (
-                <JewelGlyph type={product.glyph} className="h-32 w-32 text-gold/80" />
-              )}
-              <Shimmer seed={product.id} />
-              <Sparkles seed={product.id} count={7} />
-            </div>
+            <ProductImageCarousel
+              images={product.images}
+              glyph={product.glyph}
+              alt={product.name}
+              seed={product.id}
+              grayscale={stock.tone === 'out'}
+              badge={product.badge}
+            />
 
             <div className="relative flex flex-col p-7 sm:p-8">
               <button

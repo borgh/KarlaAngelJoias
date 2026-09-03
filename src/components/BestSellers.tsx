@@ -56,7 +56,7 @@ export function BestSellers() {
           ))}
         </div>
 
-        {products.every((p) => !p.imageUrl) && (
+        {products.every((p) => p.images.length === 0) && (
           <p className="mt-8 text-center text-[12px] text-ivory/35">
             Catálogo ilustrativo — fotos reais das peças em breve.
           </p>

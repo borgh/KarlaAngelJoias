@@ -3,11 +3,11 @@ import { Plus, Pencil, Trash2, X } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import type { Product, Category } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
-import { ImageUpload } from '../components/ImageUpload'
+import { ImageGalleryUpload } from '../components/ImageGalleryUpload'
 
 type ProductFormFields = Pick<
   Product,
-  'name' | 'categoryId' | 'price' | 'badge' | 'description' | 'imageUrl' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
+  'name' | 'categoryId' | 'price' | 'badge' | 'description' | 'images' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
 >
 
 const EMPTY_FORM: ProductFormFields = {
@@ -16,7 +16,7 @@ const EMPTY_FORM: ProductFormFields = {
   price: 0,
   badge: '',
   description: '',
-  imageUrl: '',
+  images: [],
   isBestseller: false,
   isActive: true,
   sortOrder: 0,
@@ -67,7 +67,7 @@ export default function Products() {
       price: p.price,
       badge: p.badge,
       description: p.description,
-      imageUrl: p.imageUrl,
+      images: p.images ?? (p.imageUrl ? [p.imageUrl] : []),
       isBestseller: p.isBestseller,
       isActive: p.isActive,
       sortOrder: p.sortOrder,
@@ -139,8 +139,8 @@ export default function Products() {
               {products.map((p) => (
                 <tr key={p.id} className="border-t border-ink/5">
                   <td className="flex items-center gap-3 px-5 py-3">
-                    {p.imageUrl ? (
-                      <img src={p.imageUrl} className="h-10 w-10 rounded-lg object-cover" alt="" />
+                    {p.images?.[0] || p.imageUrl ? (
+                      <img src={p.images?.[0] || p.imageUrl} className="h-10 w-10 rounded-lg object-cover" alt="" />
                     ) : (
                       <div className="h-10 w-10 rounded-lg bg-ivory-dim" />
                     )}
@@ -213,9 +213,9 @@ export default function Products() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
-                  Imagem
+                  Fotos
                 </label>
-                <ImageUpload value={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} />
+                <ImageGalleryUpload images={form.images} onChange={(images) => setForm({ ...form, images })} />
               </div>
 
               <div>

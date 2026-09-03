@@ -31,6 +31,7 @@ export type Product = {
   badge: string
   description: string
   imageUrl: string
+  images: string[]
   isBestseller: boolean
   isActive: boolean
   sortOrder: number
