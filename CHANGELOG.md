@@ -4,6 +4,11 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-09-03
+
+### Added
+- Galeria de até 5 fotos por produto, com carrossel no site público — upload múltiplo e reordenar no admin (`ImageGalleryUpload`), carrossel com setas/dots/arrastar no site (`ProductImageCarousel`), só aparece com mais de 1 foto. Migração automática de produtos antigos (imageUrl único → images[0]). `[e314695]`
+
 ## 2026-08-17
 
 ### Added

@@ -21,6 +21,16 @@ Clicar em qualquer card (não só o botão de comprar) abre um modal com imagem 
 
 Acessibilidade: o card não é um `<button>` de verdade (teria um link `<a>` de WhatsApp aninhado dentro, inválido em HTML) — é uma `<div role="button" tabIndex={0}>` com `onKeyDown` tratando Enter/Espaço.
 
+## Galeria de até 5 fotos por produto
+
+Cada produto pode ter até 5 imagens (`images: string[]`, campo do produto). A primeira da lista é a "capa" — usada no card do catálogo e mantida também em `imageUrl` (compatibilidade, sempre igual a `images[0]`).
+
+**Admin** (`admin/src/components/ImageGalleryUpload.tsx`): upload múltiplo (várias fotos de uma vez), reordenar com setinhas (a ordem define qual é a capa), remover individualmente. Limite de 5 aplicado tanto no front quanto no backend (`sanitizeImages()` em `server/src/routes/products.js`, corta qualquer excesso enviado).
+
+**Site público** (`src/components/ProductImageCarousel.tsx`): carrossel com setas, indicadores (dots clicáveis) e arrastar (swipe, via `framer-motion`) — usado no `ProductModal`. Só mostra os controles de navegação quando o produto tem mais de 1 foto; com 1 foto ou nenhuma, comportamento idêntico a antes (sem elementos de navegação à toa). `ProductCard` mostra só a capa + um selo discreto com o número de fotos quando há mais de uma.
+
+**Migração**: produtos criados antes dessa funcionalidade tinham só `imageUrl` (string única) — migração automática em `seed.js` converte pra `images: [imageUrl]` no boot do servidor, sem perder nenhuma foto já cadastrada.
+
 ## Sem descrição cadastrada
 
 Se o produto não tem `description` preenchida no admin, o modal mostra um texto padrão convidando a falar no WhatsApp — nunca fica em branco.
