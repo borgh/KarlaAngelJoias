@@ -4,6 +4,14 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-09-16
+
+### Changed
+- Redesign completo do site público seguindo a Identidade Visual 2025 (Laís Nass Design): paleta rosé/taupe/off-white/dourado, logomarca oficial em imagem, tipografia Josefin Sans + Montserrat (equivalentes livres — Mansory/Boowie são comerciais, ver `docs/features/identidade-visual.md`), layout no estilo H.Stern: barra de avisos, logo centralizada, menu horizontal, hero com carrossel de fotos do brand book, categorias em tiles, cards brancos, "Nossa história" com o retrato da Karla, newsletter em rosé. Fio lateral de bolinhas removido (não combina com o minimalismo da nova marca). Responsivo (mobile/tablet/desktop) com gaveta lateral.
+
+### Added
+- Menu reorganizado com as linhas da marca — **Semijoia · Joias · Moissanite · Noiva** — mantendo Coleções, Mais vendidos, Catálogo, Nossa história, Contato e Guia de medidas. Novo campo `line` no produto (independente de categoria), select "Linha" no admin, filtro por linha no catálogo ligado ao menu via `#catalogo/<linha>`; categoria "Moissanite" migrada automaticamente para a linha moissanite.
+
 ## 2026-09-03
 
 ### Added

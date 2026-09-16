@@ -21,6 +21,12 @@ Clicar em qualquer card (não só o botão de comprar) abre um modal com imagem 
 
 Acessibilidade: o card não é um `<button>` de verdade (teria um link `<a>` de WhatsApp aninhado dentro, inválido em HTML) — é uma `<div role="button" tabIndex={0}>` com `onKeyDown` tratando Enter/Espaço.
 
+## Linhas da marca (menu: Semijoia · Joias · Moissanite · Noiva)
+
+Campo `line` do produto (`'semijoia' | 'joias' | 'moissanite' | 'noiva' | null`), **independente de categoria** — um anel pode ser semijoia ou joia; categoria continua sendo o tipo de peça (anel/colar/brinco…). Editável no admin (select "Linha" no formulário do produto); validado no backend (`PRODUCT_LINES` em `server/src/routes/products.js`).
+
+No site, os 4 itens do menu apontam para `#catalogo/<linha>`. Esse hash não corresponde a nenhum elemento, então o `Catalog` escuta `hashchange`, lê a linha (`src/lib/lines.ts`), aplica o filtro e rola até o catálogo — funciona com `<a href>` comum (menu desktop, gaveta mobile, rodapé, blocos da home) e ao abrir a URL compartilhada. Produtos da categoria "Moissanite" contam como linha moissanite mesmo sem o campo preenchido (migração no `seed.js` + fallback no `SiteDataContext`).
+
 ## Galeria de até 5 fotos por produto
 
 Cada produto pode ter até 5 imagens (`images: string[]`, campo do produto). A primeira da lista é a "capa" — usada no card do catálogo e mantida também em `imageUrl` (compatibilidade, sempre igual a `images[0]`).

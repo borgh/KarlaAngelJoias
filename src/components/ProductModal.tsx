@@ -28,7 +28,7 @@ export function ProductModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/55 p-4 backdrop-blur-sm"
           onClick={onClose}
         >
           <motion.div
@@ -37,7 +37,7 @@ export function ProductModal({
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="grid max-h-[88vh] w-full max-w-3xl grid-cols-1 overflow-y-auto rounded-2xl bg-ivory shadow-2xl sm:grid-cols-2"
+            className="grid max-h-[88vh] w-full max-w-3xl grid-cols-1 overflow-y-auto rounded-sm bg-ivory shadow-2xl sm:grid-cols-2"
           >
             <ProductImageCarousel
               images={product.images}
@@ -57,19 +57,19 @@ export function ProductModal({
                 <X size={22} />
               </button>
 
-              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-garnet">
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">
                 {product.categoryName}
               </p>
-              <h2 className="mt-2 font-display text-3xl leading-tight text-ink">{product.name}</h2>
+              <h2 className="mt-2 font-display text-3xl font-light tracking-[0.02em] leading-tight text-ink">{product.name}</h2>
               <div className="mt-3 flex items-center gap-3">
-                <p className="text-2xl text-gold">{formatBRL(product.price)}</p>
+                <p className="text-2xl font-medium text-gold-deep">{formatBRL(product.price)}</p>
                 <span
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                     stock.tone === 'out'
                       ? 'bg-ink/5 text-ink/40'
                       : stock.tone === 'low'
-                        ? 'bg-garnet/10 text-garnet'
-                        : 'bg-green-50 text-green-700'
+                        ? 'bg-garnet/15 text-garnet'
+                        : 'bg-taupe/40 text-ink/70'
                   }`}
                 >
                   {stock.text}
@@ -94,7 +94,7 @@ export function ProductModal({
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-8 rounded-full bg-gold py-3.5 text-center text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-gold-bright"
+                  className="mt-8 rounded-full bg-ink py-3.5 text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-ivory transition-colors hover:bg-rose hover:text-white"
                 >
                   Comprar no WhatsApp
                 </a>
@@ -103,7 +103,7 @@ export function ProductModal({
               {product.glyph === 'ring' && (
                 <button
                   onClick={() => setRingSizerOpen(true)}
-                  className="mt-3 flex items-center justify-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink/50 hover:text-garnet"
+                  className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/50 hover:text-rose-deep"
                 >
                   <Ruler size={13} /> Não sabe seu tamanho? Descubra aqui
                 </button>

@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext'
 const FIELDS: { key: string; label: string; multiline?: boolean; group: string }[] = [
   { key: 'hero.eyebrow', label: 'Texto pequeno acima do título', group: 'Hero (topo do site)' },
   { key: 'hero.title_line1', label: 'Título — linha 1', group: 'Hero (topo do site)' },
-  { key: 'hero.title_line2', label: 'Título — linha 2 (destaque em dourado)', group: 'Hero (topo do site)' },
+  { key: 'hero.title_line2', label: 'Título — linha 2', group: 'Hero (topo do site)' },
   { key: 'hero.title_line3', label: 'Título — linha 3', group: 'Hero (topo do site)' },
-  { key: 'hero.subtitle', label: 'Parágrafo de apresentação', multiline: true, group: 'Hero (topo do site)' },
+  { key: 'hero.subtitle', label: 'Parágrafo de apresentação (usado na aba/descrição da página)', multiline: true, group: 'Hero (topo do site)' },
 
   { key: 'about.paragraph1', label: 'Parágrafo 1', multiline: true, group: 'Nossa história' },
   { key: 'about.paragraph2', label: 'Parágrafo 2', multiline: true, group: 'Nossa história' },

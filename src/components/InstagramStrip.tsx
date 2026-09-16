@@ -13,17 +13,17 @@ export function InstagramStrip() {
   const hasRealItems = instagramItems.some((i) => i.imageUrl)
 
   return (
-    <section className="bg-ivory-dim px-6 py-24 lg:px-12">
+    <section className="border-t border-taupe/60 bg-ivory px-6 py-20 lg:px-12">
       <div className="mx-auto max-w-7xl text-center">
-        <InstagramIcon className="mx-auto mb-4 text-gold" size={26} />
-        <h2 className="font-display text-3xl text-ink lg:text-4xl">
+        <InstagramIcon className="mx-auto mb-4 text-rose-deep" size={24} />
+        <h2 className="font-display text-3xl font-light tracking-[0.04em] text-ink lg:text-4xl">
           Acompanhe no Instagram
         </h2>
         <a
           href={instagramUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 inline-block text-[14px] font-medium text-garnet hover:underline"
+          className="mt-2 inline-block text-[13px] font-medium tracking-[0.08em] text-rose-deep hover:underline"
         >
           {instagramHandle}
         </a>
@@ -40,12 +40,12 @@ export function InstagramStrip() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="group flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink transition-transform hover:scale-[1.03]"
+                  className="group flex aspect-square items-center justify-center overflow-hidden rounded-sm bg-ivory-dim transition-transform hover:scale-[1.03]"
                 >
                   {item.imageUrl ? (
                     <img src={item.imageUrl} alt={item.title || ''} className="h-full w-full object-cover" />
                   ) : (
-                    <JewelGlyph type="ring" className="h-10 w-10 text-gold/70 transition-colors group-hover:text-gold" />
+                    <JewelGlyph type="ring" className="h-10 w-10 text-gold/80 transition-colors group-hover:text-gold" />
                   )}
                 </motion.a>
               ))
@@ -59,9 +59,9 @@ export function InstagramStrip() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="group flex aspect-square items-center justify-center rounded-xl bg-ink transition-transform hover:scale-[1.03]"
+                  className="group flex aspect-square items-center justify-center rounded-sm bg-ivory-dim transition-transform hover:scale-[1.03]"
                 >
-                  <JewelGlyph type={g} className="h-10 w-10 text-gold/70 transition-colors group-hover:text-gold" />
+                  <JewelGlyph type={g} className="h-10 w-10 text-gold/80 transition-colors group-hover:text-gold" />
                 </motion.a>
               ))}
         </div>

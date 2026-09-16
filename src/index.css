@@ -1,21 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  /* Paleta — "Ourivesaria contemporânea": verde-joia profundo + ouro envelhecido + marfim */
-  --color-ink: #0e2118;        /* verde quase-preto, base da marca */
-  --color-ink-soft: #16301f;   /* verde para superfícies elevadas sobre ink */
-  --color-ivory: #f6f2e8;      /* marfim, fundo claro */
-  --color-ivory-dim: #ece5d4;  /* marfim levemente mais escuro, para cards */
-  --color-gold: #c89a4c;       /* ouro envelhecido, accent principal */
-  --color-gold-bright: #e3c27e;/* ouro claro, hover/brilho */
-  --color-garnet: #7c2f34;     /* granada — accent secundário, contraste quente */
-  --color-charcoal: #201d18;   /* texto sobre marfim */
+  /* Paleta oficial — Identidade Visual 2025 (Laís Nass Design):
+     Pantone 5225 CVC (rosé) · Pantone Warm Gray 2 U (taupe) · off-white
+     das aplicações da logo · gradiente dourado. Os nomes "ink"/"ivory"
+     são mantidos por compatibilidade com os componentes, mas os valores
+     agora seguem a paleta da marca. */
+  --color-rose: #d6b7b5;        /* Pantone 5225 CVC — rosé, cor principal */
+  --color-rose-deep: #b98d8a;   /* rosé fechado — texto/hover sobre fundo claro */
+  --color-taupe: #d4c6bd;       /* Pantone Warm Gray 2 U — superfícies, bordas */
+  --color-taupe-deep: #a6968b;  /* taupe fechado — rótulos, divisórias */
+  --color-ivory: #f5f0ed;       /* off-white quente — fundo da página (fundo das logos) */
+  --color-ivory-dim: #ede5df;   /* off-white um tom abaixo — alternância de seções */
+  --color-gold: #b8935e;        /* ouro (meio do gradiente da marca) — accent, botões */
+  --color-gold-bright: #e6cc9d; /* ouro claro (topo do gradiente) — hover/brilho */
+  --color-gold-deep: #8a6a3e;   /* ouro fechado (base do gradiente) */
+  --color-ink: #4a403c;         /* charcoal quente — texto principal (marca não usa preto puro) */
+  --color-ink-soft: #5f534e;    /* charcoal um tom acima — superfícies escuras (modais) */
+  --color-garnet: #b5807c;      /* rosé profundo — accent secundário / avisos */
+  --color-charcoal: #4a403c;
 
-  --font-display: "Fraunces", "Iowan Old Style", serif;
-  --font-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Josefin Sans", "Mansory", "Jost", sans-serif;
+  --font-body: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --font-script: "Parisienne", cursive;
 
   --animate-shimmer: shimmer 2.6s linear infinite;
   --animate-draw: draw 1.4s ease forwards;
+  --animate-kenburns: kenburns 9s ease-out forwards;
 }
 
 @keyframes shimmer {
@@ -26,6 +37,23 @@
 
 @keyframes draw {
   to { stroke-dashoffset: 0; }
+}
+
+/* zoom lento nas fotos do hero (estilo editorial de joalheria) */
+@keyframes kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
+/* Gradiente dourado oficial da marca (do brand book) */
+.text-gradient-gold {
+  background: linear-gradient(180deg, #8a6a3e 0%, #d4b078 45%, #f0dcb0 60%, #b8935e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bg-gradient-gold {
+  background: linear-gradient(135deg, #8a6a3e 0%, #c9a86a 40%, #f0dcb0 55%, #b8935e 100%);
 }
 
 @keyframes twinkle {
@@ -55,7 +83,7 @@ body {
 }
 
 ::selection {
-  background-color: var(--color-gold);
+  background-color: var(--color-rose);
   color: var(--color-ink);
 }
 
@@ -69,12 +97,8 @@ body {
   font-family: var(--font-display);
 }
 
-.text-gradient-gold {
-  background: linear-gradient(90deg, #a87c34, #e3c27e 45%, #a87c34);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.font-script {
+  font-family: var(--font-script);
 }
 
 .shimmer-bg {

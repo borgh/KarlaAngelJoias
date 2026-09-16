@@ -13,18 +13,19 @@ export function Newsletter() {
   }
 
   return (
-    <section className="bg-ink px-6 py-20 text-ivory lg:px-12">
+    <section className="bg-rose px-6 py-20 text-white lg:px-12">
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-        <h2 className="font-display text-3xl lg:text-4xl">
-          Ganhe <span className="text-gold">10% off</span> na primeira compra
+        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-white/80">Newsletter</p>
+        <h2 className="font-display text-3xl font-light tracking-[0.04em] lg:text-4xl">
+          Ganhe <span className="font-normal">10% off</span> na primeira compra
         </h2>
-        <p className="mt-3 max-w-md text-[14px] text-ivory/60">
+        <p className="mt-3 max-w-md text-[14px] text-white/85">
           Assine e receba lançamentos, cupons exclusivos e inspirações de
           estilo direto no seu e-mail.
         </p>
 
         {sent ? (
-          <p className="mt-8 text-gold">Obrigada por assinar! Confira seu e-mail em breve. ✨</p>
+          <p className="mt-8 text-white">Obrigada por assinar! Confira seu e-mail em breve. ✨</p>
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
             <input
@@ -33,11 +34,11 @@ export function Newsletter() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu@email.com"
-              className="w-full rounded-full border border-ivory/20 bg-transparent px-5 py-3 text-sm text-ivory placeholder:text-ivory/40 focus:border-gold"
+              className="w-full rounded-full border border-white/50 bg-white/15 px-5 py-3 text-sm text-white outline-none placeholder:text-white/60 focus:border-white focus:bg-white/25"
             />
             <button
               type="submit"
-              className="shrink-0 rounded-full bg-gold px-7 py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-gold-bright"
+              className="shrink-0 rounded-full bg-white px-7 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-rose-deep transition-colors hover:bg-ivory"
             >
               Assinar
             </button>

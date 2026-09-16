@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, X } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
+import { PRODUCT_LINES } from '../lib/types'
 import type { Product, Category } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 import { ImageGalleryUpload } from '../components/ImageGalleryUpload'
 
 type ProductFormFields = Pick<
   Product,
-  'name' | 'categoryId' | 'price' | 'badge' | 'description' | 'images' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
+  'name' | 'categoryId' | 'line' | 'price' | 'badge' | 'description' | 'images' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
 >
 
 const EMPTY_FORM: ProductFormFields = {
   name: '',
   categoryId: null,
+  line: null,
   price: 0,
   badge: '',
   description: '',
@@ -67,6 +69,7 @@ export default function Products() {
       price: p.price,
       badge: p.badge,
       description: p.description,
+      line: p.line ?? null,
       images: p.images ?? (p.imageUrl ? [p.imageUrl] : []),
       isBestseller: p.isBestseller,
       isActive: p.isActive,
@@ -232,6 +235,24 @@ export default function Products() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
+                    Linha
+                  </label>
+                  <select
+                    value={form.line || ''}
+                    onChange={(e) => setForm({ ...form, line: (e.target.value || null) as typeof form.line })}
+                    className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
+                  >
+                    <option value="">Sem linha</option>
+                    {PRODUCT_LINES.map((l) => (
+                      <option key={l.value} value={l.value}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[11px] text-ink/40">Menu principal do site: Semijoia, Joias, Moissanite ou Noiva.</p>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
                     Categoria
                   </label>
                   <select
@@ -247,6 +268,9 @@ export default function Products() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
                     Preço (R$)
@@ -259,7 +283,6 @@ export default function Products() {
                     className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
                   />
                 </div>
-              </div>
 
               <div>
                 <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
@@ -275,6 +298,7 @@ export default function Products() {
                 <p className="mt-1 text-[11px] text-ink/40">
                   Limite mínimo e canais de alerta ficam na tela de Estoque.
                 </p>
+              </div>
               </div>
 
               <div>

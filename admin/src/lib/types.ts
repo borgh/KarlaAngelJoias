@@ -23,6 +23,14 @@ export type Category = {
   notifyChannels: NotifyChannel[] | null
 }
 
+export type ProductLine = 'semijoia' | 'joias' | 'moissanite' | 'noiva'
+export const PRODUCT_LINES: { value: ProductLine; label: string }[] = [
+  { value: 'semijoia', label: 'Semijoia' },
+  { value: 'joias', label: 'Joias' },
+  { value: 'moissanite', label: 'Moissanite' },
+  { value: 'noiva', label: 'Noiva' },
+]
+
 export type Product = {
   id: string
   name: string
@@ -30,6 +38,7 @@ export type Product = {
   price: number
   badge: string
   description: string
+  line: ProductLine | null
   imageUrl: string
   images: string[]
   isBestseller: boolean

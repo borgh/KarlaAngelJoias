@@ -39,15 +39,15 @@ export function ProductImageCarousel({
   const hasMultiple = images.length > 1
 
   return (
-    <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-ink sm:aspect-auto">
+    <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-ivory-dim sm:aspect-auto">
       {badge && (
-        <span className="absolute left-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink">
+        <span className="absolute left-4 top-4 z-10 rounded-full bg-rose px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
           {badge}
         </span>
       )}
 
       {images.length === 0 ? (
-        <JewelGlyph type={glyph} className="h-32 w-32 text-gold/80" />
+        <JewelGlyph type={glyph} className="h-32 w-32 text-gold" />
       ) : (
         <div className="absolute inset-0 overflow-hidden">
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
@@ -81,14 +81,14 @@ export function ProductImageCarousel({
           <button
             onClick={() => go(index - 1)}
             aria-label="Foto anterior"
-            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-ink/50 text-ivory backdrop-blur-sm transition-colors hover:bg-ink/80"
+            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => go(index + 1)}
             aria-label="Próxima foto"
-            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-ink/50 text-ivory backdrop-blur-sm transition-colors hover:bg-ink/80"
+            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
           >
             <ChevronRight size={18} />
           </button>
@@ -100,7 +100,7 @@ export function ProductImageCarousel({
                 onClick={() => go(i)}
                 aria-label={`Ver foto ${i + 1}`}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? 'w-4 bg-ivory' : 'w-1.5 bg-ivory/40 hover:bg-ivory/70'
+                  i === index ? 'w-4 bg-ink' : 'w-1.5 bg-ink/35 hover:bg-ink/60'
                 }`}
               />
             ))}

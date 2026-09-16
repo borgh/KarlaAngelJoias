@@ -8,6 +8,15 @@ export const productsRouter = Router()
 
 const MAX_PRODUCT_IMAGES = 5
 
+// "Linha" do produto — eixo de navegação principal do site (menu:
+// Semijoia · Joias · Moissanite · Noiva). É separado de categoria de
+// propósito: um anel pode ser semijoia OU joia, então "linha" e
+// "categoria" (anel/colar/brinco…) são dimensões independentes.
+export const PRODUCT_LINES = ['semijoia', 'joias', 'moissanite', 'noiva']
+function sanitizeLine(line) {
+  return PRODUCT_LINES.includes(line) ? line : null
+}
+
 // Garante um array de até 5 URLs de imagem válidas — usado tanto na
 // criação quanto na edição, pra nunca deixar salvar mais que o limite
 // nem lixo (valores vazios/não-string) vindo do cliente.
@@ -35,6 +44,7 @@ function serializePublic(row) {
     price: row.price,
     badge: row.badge,
     description: row.description,
+    line: row.line ?? null,
     images,
     imageUrl: images[0] || '', // compatibilidade: quem ainda ler só imageUrl continua funcionando
     isBestseller: row.isBestseller,
@@ -77,6 +87,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     price,
     badge,
     description,
+    line,
     imageUrl,
     images,
     isBestseller,
@@ -97,6 +108,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     price: Number(price) || 0,
     badge: badge || '',
     description: description || '',
+    line: sanitizeLine(line),
     imageUrl: sanitizedImages[0] || '',
     images: sanitizedImages,
     isBestseller: !!isBestseller,
@@ -123,6 +135,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     price,
     badge,
     description,
+    line,
     imageUrl,
     images,
     isBestseller,
@@ -142,6 +155,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     price: price !== undefined ? Number(price) : existing.price,
     badge: badge ?? existing.badge,
     description: description ?? existing.description,
+    line: line !== undefined ? sanitizeLine(line) : (existing.line ?? null),
     images: sanitizedImages ?? existing.images ?? [],
     imageUrl: (sanitizedImages ?? existing.images ?? [])[0] || '',
     isBestseller: isBestseller !== undefined ? !!isBestseller : existing.isBestseller,

@@ -1,9 +1,12 @@
+import type { ProductLine } from './lines'
+
 export type Glyph = 'ring' | 'necklace' | 'earring' | 'bracelet'
 
 export type ProductView = {
   id: string
   name: string
   categoryName: string
+  line: ProductLine | null
   price: number
   badge?: string
   glyph: Glyph

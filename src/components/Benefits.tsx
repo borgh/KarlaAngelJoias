@@ -9,13 +9,13 @@ const items = [
 
 export function Benefits() {
   return (
-    <section className="border-y border-ink/10 bg-ivory-dim px-6 py-14 lg:px-12">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-4">
+    <section className="border-y border-taupe/60 bg-ivory-dim px-6 py-10 lg:px-12">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-4">
         {items.map(({ icon: Icon, title, desc }) => (
           <div key={title} className="flex items-start gap-3">
-            <Icon size={22} strokeWidth={1.3} className="mt-0.5 shrink-0 text-gold" />
+            <Icon size={20} strokeWidth={1.2} className="mt-0.5 shrink-0 text-gold" />
             <div>
-              <p className="text-[13px] font-semibold text-ink">{title}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-ink">{title}</p>
               <p className="text-[12px] text-ink/55">{desc}</p>
             </div>
           </div>

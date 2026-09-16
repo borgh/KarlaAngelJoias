@@ -31,9 +31,9 @@ export function ChainThread() {
       aria-hidden="true"
       className="pointer-events-none fixed left-6 top-0 z-40 hidden h-screen w-6 lg:block"
     >
-      <div className="relative mx-auto h-full w-px bg-ink/10">
+      <div className="relative mx-auto h-full w-px bg-taupe">
         <div
-          className="absolute left-0 top-0 w-px bg-gradient-to-b from-gold via-gold-bright to-gold transition-[height] duration-150 ease-out"
+          className="absolute left-0 top-0 w-px bg-gradient-to-b from-rose-deep via-rose to-rose-deep transition-[height] duration-150 ease-out"
           style={{ height: `${progress * 100}%` }}
         />
         {Array.from({ length: links }).map((_, i) => {
@@ -45,7 +45,7 @@ export function ChainThread() {
               className="absolute -left-[5px] h-[11px] w-[11px] rounded-full border transition-colors duration-300"
               style={{
                 top: `${at * 100}%`,
-                borderColor: lit ? 'var(--color-gold)' : 'rgba(14,33,24,0.15)',
+                borderColor: lit ? 'var(--color-rose-deep)' : 'var(--color-taupe)',
                 backgroundColor: lit ? 'var(--color-ivory)' : 'transparent',
               }}
             />

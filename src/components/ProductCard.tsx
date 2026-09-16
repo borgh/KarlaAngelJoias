@@ -36,14 +36,14 @@ export function ProductCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.55, delay }}
-      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-ivory/10 bg-ink-soft/60 p-5 text-left transition-colors hover:border-gold/40"
+      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-sm border border-taupe/60 bg-white p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:border-rose hover:shadow-[0_16px_40px_-18px_rgba(74,64,60,0.35)] lg:p-5"
     >
       {product.badge && (
-        <span className="absolute left-4 top-4 z-10 rounded-full bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink">
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-rose px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white lg:left-4 lg:top-4">
           {product.badge}
         </span>
       )}
-      <div className="relative mb-5 flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink">
+      <div className="relative mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-sm bg-ivory-dim">
         {product.images[0] ? (
           <img
             src={product.images[0]}
@@ -55,7 +55,7 @@ export function ProductCard({
         ) : (
           <JewelGlyph
             type={product.glyph}
-            className="h-24 w-24 text-gold/80 transition-transform duration-500 group-hover:scale-110"
+            className="h-24 w-24 text-gold transition-transform duration-500 group-hover:scale-110"
           />
         )}
         {/* Brilho passando — timing aleatório por produto, flasheia com
@@ -63,21 +63,21 @@ export function ProductCard({
         <Shimmer seed={product.id} />
         <Sparkles seed={product.id} count={4} />
         {product.images.length > 1 && (
-          <span className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-ink/60 px-2 py-1 text-[10px] font-semibold text-ivory backdrop-blur-sm">
+          <span className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-white/85 px-2 py-1 text-[10px] font-semibold text-ink backdrop-blur-sm">
             <Images size={11} /> {product.images.length}
           </span>
         )}
-        <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[11px] font-semibold uppercase tracking-wide text-ivory opacity-0 transition-all duration-300 group-hover:bg-ink/40 group-hover:opacity-100 group-hover:backdrop-blur-[1px]">
+        <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[11px] font-semibold uppercase tracking-[0.16em] text-white opacity-0 transition-all duration-300 group-hover:bg-ink/35 group-hover:opacity-100 group-hover:backdrop-blur-[1px]">
           Ver detalhes
         </span>
       </div>
-      <p className="text-[11px] uppercase tracking-[0.14em] text-ivory/45">{product.categoryName}</p>
-      <h3 className="font-display text-lg text-ivory">{product.name}</h3>
+      <p className="text-[10px] uppercase tracking-[0.2em] text-taupe-deep">{product.categoryName}</p>
+      <h3 className="mt-1 font-display text-[17px] tracking-[0.02em] text-ink">{product.name}</h3>
       <div className="mt-1 flex items-center justify-between gap-2">
-        <p className="text-gold">{formatBRL(product.price)}</p>
+        <p className="text-[14px] font-medium text-gold-deep sm:text-[15px]">{formatBRL(product.price)}</p>
         <p
-          className={`text-[11px] font-semibold ${
-            stock.tone === 'out' ? 'text-ivory/40' : stock.tone === 'low' ? 'text-red-400' : 'text-ivory/40'
+          className={`shrink-0 whitespace-nowrap text-[10px] font-semibold sm:text-[11px] ${
+            stock.tone === 'out' ? 'text-ink/40' : stock.tone === 'low' ? 'text-garnet' : 'text-ink/45'
           }`}
         >
           {stock.text}
@@ -87,7 +87,7 @@ export function ProductCard({
         <button
           disabled
           onClick={(e) => e.stopPropagation()}
-          className="mt-4 cursor-not-allowed rounded-full border border-ivory/10 py-2.5 text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-ivory/35"
+          className="mt-4 cursor-not-allowed rounded-full border border-taupe/60 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/35"
         >
           Esgotado
         </button>
@@ -97,9 +97,10 @@ export function ProductCard({
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="mt-4 rounded-full border border-ivory/20 py-2.5 text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-ivory transition-colors hover:border-gold hover:bg-gold hover:text-ink"
+          className="mt-4 whitespace-nowrap rounded-full border border-ink/25 py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.08em] text-ink transition-colors hover:border-rose hover:bg-rose hover:text-white sm:text-[11px] sm:tracking-[0.14em]"
         >
-          Comprar no WhatsApp
+          <span className="sm:hidden">Comprar</span>
+          <span className="hidden sm:inline">Comprar no WhatsApp</span>
         </a>
       )}
     </motion.div>

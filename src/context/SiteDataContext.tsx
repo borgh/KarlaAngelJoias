@@ -9,6 +9,7 @@ type ApiProduct = {
   id: string
   name: string
   categoryId: string | null
+  line: 'semijoia' | 'joias' | 'moissanite' | 'noiva' | null
   price: number
   badge: string
   imageUrl: string
@@ -41,6 +42,7 @@ const FALLBACK_PRODUCTS: ProductView[] = defaultProducts.map((p) => ({
   id: p.id,
   name: p.name,
   categoryName: p.category,
+  line: p.category.toLowerCase() === 'moissanite' ? 'moissanite' : 'semijoia',
   price: p.price,
   badge: p.badge,
   glyph: p.glyph,
@@ -91,6 +93,8 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
             id: p.id,
             name: p.name,
             categoryName: cat?.name || '—',
+            // Categoria "Moissanite" conta como linha moissanite mesmo sem o campo preenchido
+            line: p.line ?? (cat?.name?.toLowerCase() === 'moissanite' ? 'moissanite' : null),
             price: p.price,
             badge: p.badge || undefined,
             glyph: cat?.glyph || 'ring',

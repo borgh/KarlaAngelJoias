@@ -82,6 +82,7 @@ if (store.products.all().length === 0) {
       description: '',
       imageUrl: '',
       images: [],
+      line: p.categoryId === 'moissanite' ? 'moissanite' : 'semijoia',
       isBestseller: p.isBestseller,
       isActive: true,
       sortOrder: i,
@@ -111,6 +112,12 @@ for (const p of store.products.all()) {
     store.products.update(p.id, {
       images: p.imageUrl ? [p.imageUrl] : [],
     })
+  }
+  // Migração: campo "line" (Semijoia/Joias/Moissanite/Noiva). Produtos
+  // antigos ficam sem linha (null) — a categoria "Moissanite" já é
+  // tratada como linha moissanite no site, então nada some do menu.
+  if (p.line === undefined) {
+    store.products.update(p.id, { line: p.categoryId === 'moissanite' ? 'moissanite' : null })
   }
 }
 

@@ -1,7 +1,6 @@
 import { SiteDataProvider } from './context/SiteDataContext'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
-import { ChainThread } from './components/ChainThread'
 import { Categories } from './components/Categories'
 import { Benefits } from './components/Benefits'
 import { BestSellers } from './components/BestSellers'
@@ -16,7 +15,6 @@ function App() {
   return (
     <SiteDataProvider>
       <div className="font-body">
-        <ChainThread />
         <Navbar />
         <main>
           <Hero />
