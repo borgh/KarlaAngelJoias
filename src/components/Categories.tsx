@@ -24,13 +24,13 @@ export function Categories() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.55, delay: i * 0.07 }}
-              className={`group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-sm p-6 lg:p-8 ${
+              className={`group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-sm p-5 sm:p-6 lg:p-8 ${
                 i % 2 === 0 ? 'bg-rose' : 'bg-taupe'
               }`}
             >
               <span className="absolute inset-3 rounded-sm border border-white/50 transition-all duration-500 group-hover:inset-2" />
-              <span className="font-script absolute right-6 top-5 text-2xl text-white/70 lg:text-3xl">easy chic</span>
-              <h3 className="relative font-display text-2xl font-light uppercase tracking-[0.16em] text-white lg:text-3xl">
+              <span className="font-script absolute right-5 top-4 text-xl text-white/70 sm:right-6 sm:top-5 sm:text-2xl lg:text-3xl">easy chic</span>
+              <h3 className="relative break-words font-display text-[17px] font-light uppercase tracking-[0.08em] text-white sm:text-2xl sm:tracking-[0.14em] lg:text-3xl lg:tracking-[0.16em]">
                 {l.label}
               </h3>
               <p className="relative mt-1 text-[12px] text-white/85">{l.tagline}</p>
