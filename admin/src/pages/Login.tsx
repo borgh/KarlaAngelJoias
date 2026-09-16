@@ -37,9 +37,8 @@ export default function Login() {
 
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <p className="font-display text-2xl text-ivory">
-            Karla Angel <span className="text-gold">Joias</span>
-          </p>
+          <img src="/brand/icon-rose.png" alt="" className="mx-auto mb-4 h-14 w-auto" />
+          <img src="/brand/logo-white.png" alt="Karla Angel" className="mx-auto h-6 w-auto" />
           <p className="mt-1 text-[13px] uppercase tracking-[0.2em] text-ivory/50">Painel administrativo</p>
         </div>
 
@@ -53,7 +52,7 @@ export default function Login() {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mb-4 w-full rounded-lg border border-ivory/15 bg-transparent px-3 py-2.5 text-ivory outline-none focus:border-gold"
+            className="mb-4 w-full rounded-lg border border-ivory/15 bg-transparent px-3 py-2.5 text-ivory outline-none focus:border-rose"
             placeholder="seu@email.com"
           />
 
@@ -65,7 +64,7 @@ export default function Login() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mb-5 w-full rounded-lg border border-ivory/15 bg-transparent px-3 py-2.5 text-ivory outline-none focus:border-gold"
+            className="mb-5 w-full rounded-lg border border-ivory/15 bg-transparent px-3 py-2.5 text-ivory outline-none focus:border-rose"
             placeholder="••••••••"
           />
 
@@ -76,7 +75,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-gold py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-gold-bright disabled:opacity-60"
+            className="w-full rounded-full bg-rose py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-rose-deep disabled:opacity-60"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>

@@ -56,10 +56,8 @@ export default function Layout() {
       <div>
         <div className="flex items-center justify-between px-6 py-6">
           <div>
-            <p className="font-display text-lg">
-              Karla Angel <span className="text-gold">Joias</span>
-            </p>
-            <p className="mt-0.5 text-[11px] uppercase tracking-[0.2em] text-ivory/45">Admin</p>
+            <img src="/brand/logo-white.png" alt="Karla Angel" className="h-4 w-auto" />
+            <p className="mt-1.5 text-[10px] uppercase tracking-[0.24em] text-rose">Admin</p>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
@@ -79,7 +77,7 @@ export default function Layout() {
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] transition-colors ${
-                  isActive ? 'bg-gold text-ink font-semibold' : 'text-ivory/75 hover:bg-ivory/10'
+                  isActive ? 'bg-rose text-white font-semibold' : 'text-ivory/75 hover:bg-ivory/10'
                 }`
               }
             >
@@ -93,7 +91,7 @@ export default function Layout() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               `mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors lg:hidden ${
-                isActive ? 'bg-gold text-ink font-semibold' : 'text-ivory/55 hover:bg-ivory/10'
+                isActive ? 'bg-rose text-white font-semibold' : 'text-ivory/55 hover:bg-ivory/10'
               }`
             }
           >
@@ -110,7 +108,7 @@ export default function Layout() {
           <p className="truncate text-[12px] text-ivory/50">{user?.email}</p>
           <button
             onClick={handleLogout}
-            className="mt-3 flex items-center gap-2 text-[13px] text-ivory/70 transition-colors hover:text-gold"
+            className="mt-3 flex items-center gap-2 text-[13px] text-ivory/70 transition-colors hover:text-rose"
           >
             <LogOut size={15} strokeWidth={1.6} /> Sair
           </button>
@@ -126,7 +124,7 @@ export default function Layout() {
         <button onClick={() => setMobileOpen(true)} aria-label="Abrir menu" className="text-ivory">
           <Menu size={22} />
         </button>
-        <p className="font-display text-[15px]">{currentLabel || 'Karla Angel Joias'}</p>
+        <p className="font-display text-[15px] tracking-[0.06em]">{currentLabel || 'Karla Angel'}</p>
         <div className="w-[22px]" />
       </header>
 
@@ -166,7 +164,7 @@ export default function Layout() {
               end={item.to === '/'}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] font-medium transition-colors ${
-                  isActive ? 'text-gold' : 'text-ivory/50'
+                  isActive ? 'text-rose' : 'text-ivory/50'
                 }`
               }
             >

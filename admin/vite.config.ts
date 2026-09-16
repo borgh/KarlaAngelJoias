@@ -15,14 +15,14 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Karla Angel Joias — Admin',
+        name: 'Karla Angel — Admin',
         short_name: 'KA Admin',
         description: 'Painel administrativo do site da Karla Angel Joias.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#0e2118',
-        theme_color: '#0e2118',
+        background_color: '#f5f0ed',
+        theme_color: '#d6b7b5',
         lang: 'pt-BR',
         icons: [
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },

@@ -1,17 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #0e2118;
-  --color-ink-soft: #16301f;
-  --color-ivory: #f6f2e8;
-  --color-ivory-dim: #ece5d4;
-  --color-gold: #c89a4c;
-  --color-gold-bright: #e3c27e;
-  --color-garnet: #7c2f34;
-  --color-charcoal: #201d18;
+  /* Paleta oficial (Identidade Visual 2025) — mesma do site público.
+     Nomes ink/ivory/gold mantidos por compatibilidade; valores da marca. */
+  --color-rose: #d6b7b5;
+  --color-rose-deep: #b98d8a;
+  --color-taupe: #d4c6bd;
+  --color-taupe-deep: #a6968b;
+  --color-ivory: #f5f0ed;
+  --color-ivory-dim: #ede5df;
+  --color-gold: #b8935e;
+  --color-gold-bright: #e6cc9d;
+  --color-gold-deep: #8a6a3e;
+  --color-ink: #4a403c;
+  --color-ink-soft: #5f534e;
+  --color-garnet: #b5807c;
+  --color-charcoal: #4a403c;
 
-  --font-display: "Fraunces", serif;
-  --font-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Josefin Sans", "Mansory", sans-serif;
+  --font-body: "Montserrat", "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
@@ -24,6 +31,6 @@ body {
 .font-display { font-family: var(--font-display); }
 
 :focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-rose-deep);
   outline-offset: 2px;
 }

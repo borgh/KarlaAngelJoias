@@ -31,6 +31,14 @@ O brand book usa **Mansory** (títulos/logo), **Boowie** (texto) e **Watermint S
 
 Se a cliente comprar a licença webfont da Mansory, basta adicionar o `@font-face` e trocar `--font-display` — duas linhas.
 
+## Favicon e ícones de app
+
+Símbolo alternativo "A com asa" (`Icone_*.png` do brand book) recortado com transparência em `public/brand/icon-{white,rose,dark,taupe}.png` (site e admin). Favicons/ícones PWA gerados por script: quadrado rosé arredondado com o símbolo branco — `favicon-32/64/192/512.png`, `apple-touch-icon.png` e versão *maskable* (símbolo menor, sem cantos arredondados, pra zona segura do Android). No admin viraram `pwa-192/512.png` + `pwa-maskable-512.png` do manifest (`background_color #f5f0ed`, `theme_color #d6b7b5`). Os `favicon.svg`/`icons.svg` antigos (verde) foram removidos.
+
+## Painel admin
+
+Mesmos tokens de cor e fontes do site (`admin/src/index.css`). Sidebar e login em charcoal quente com a logo branca, item ativo em rosé; gráficos do dashboard nas cores da paleta.
+
 ## Fotos
 
 `public/brand/hero-{1,2,3}.jpg` (carrossel do hero) e `karla.jpg` (seção "Nossa história") foram extraídas do PDF com PyMuPDF e otimizadas (JPEG progressivo, 2000px). O 1º slide usa os textos editáveis no admin (Textos do site → Hero); os outros dois apresentam as linhas Semijoia e Joias.

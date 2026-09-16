@@ -19,10 +19,10 @@ import { api } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import type { Product, Category, User, CarouselItem } from '../lib/types'
 
-const GOLD = '#c89a4c'
-const GOLD_BRIGHT = '#e3c27e'
-const GARNET = '#7c2f34'
-const INK = '#0e2118'
+const GOLD = '#b8935e'
+const GOLD_BRIGHT = '#d6b7b5'
+const GARNET = '#b98d8a'
+const INK = '#4a403c'
 const INK_SOFT = '#8a9c93'
 
 function formatBRL(v: number) {
@@ -129,12 +129,12 @@ export default function Dashboard() {
           <p className="mb-4 text-[13px] text-ink/50">Quantos produtos ativos em cada categoria</p>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={categoryData} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#0e211815" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#4a403c15" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12, fill: INK_SOFT }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: INK_SOFT }} axisLine={false} tickLine={false} />
               <Tooltip
-                cursor={{ fill: '#0e211808' }}
-                contentStyle={{ borderRadius: 10, border: '1px solid #0e21181a', fontSize: 13 }}
+                cursor={{ fill: '#4a403c08' }}
+                contentStyle={{ borderRadius: 10, border: '1px solid #4a403c1a', fontSize: 13 }}
               />
               <Bar dataKey="produtos" fill={GOLD} radius={[6, 6, 0, 0]} />
             </BarChart>
@@ -151,7 +151,7 @@ export default function Dashboard() {
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #0e21181a', fontSize: 13 }} />
+              <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #4a403c1a', fontSize: 13 }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-2 flex justify-center gap-4 text-[12px] text-ink/60">
@@ -181,7 +181,7 @@ export default function Dashboard() {
                   <Cell key={i} fill={PIE_COLORS_2[i % PIE_COLORS_2.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #0e21181a', fontSize: 13 }} />
+              <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #4a403c1a', fontSize: 13 }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-2 flex justify-center gap-4 text-[12px] text-ink/60">
@@ -208,10 +208,10 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor={GOLD} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#0e211815" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#4a403c15" vertical={false} />
                 <XAxis dataKey="date" tick={{ fontSize: 12, fill: INK_SOFT }} axisLine={false} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: INK_SOFT }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #0e21181a', fontSize: 13 }} />
+                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #4a403c1a', fontSize: 13 }} />
                 <Area type="monotone" dataKey="total" stroke={GOLD} strokeWidth={2} fill="url(#goldFill)" />
               </AreaChart>
             </ResponsiveContainer>
