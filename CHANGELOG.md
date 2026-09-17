@@ -4,6 +4,14 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-09-17
+
+### Added
+- Todos os textos e fotos do site editáveis no admin ("Textos do site", organizado por seção): até 4 slides do hero com foto/título/botão/link, foto e textos da Nossa história, barra de avisos, linhas, coleções, benefícios, mais vendidos, catálogo, Instagram, newsletter, rodapé, textos de produto. Fonte única de padrões em `server/src/db/contentDefaults.js`.
+
+### Fixed
+- Seed apagava as edições de "Textos do site" a cada deploy (`setMany` incondicional a cada subida do container). Agora só preenche chaves que não existem, e migra o hero antigo para o slide 1.
+
 ## 2026-09-16
 
 ### Changed

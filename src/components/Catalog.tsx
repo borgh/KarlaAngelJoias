@@ -64,10 +64,10 @@ export function Catalog() {
         <div className="mb-8 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">
-              {lineLabel ? `Linha ${lineLabel}` : 'Catálogo completo'}
+              {lineLabel ? `Linha ${lineLabel}` : content['catalog.eyebrow']}
             </p>
             <h2 className="font-display text-3xl font-light tracking-[0.04em] leading-tight text-ink lg:text-4xl">
-              {lineLabel ?? 'Todas as peças, em um só lugar.'}
+              {lineLabel ?? content['catalog.title']}
             </h2>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function Catalog() {
               activeLine === null ? 'border-rose bg-rose text-white' : 'border-taupe text-ink/65 hover:border-rose-deep hover:text-rose-deep'
             }`}
           >
-            Todas as linhas
+            {content['catalog.all_lines']}
           </a>
           {LINES.map((l) => (
             <a

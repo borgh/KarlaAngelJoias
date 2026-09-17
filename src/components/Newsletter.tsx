@@ -1,6 +1,8 @@
+import { useSiteData } from '../context/SiteDataContext'
 import { useState, type FormEvent } from 'react'
 
 export function Newsletter() {
+  const { content } = useSiteData()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
 
@@ -15,17 +17,16 @@ export function Newsletter() {
   return (
     <section className="bg-rose px-6 py-20 text-white lg:px-12">
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-white/80">Newsletter</p>
+        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-white/80">{content['newsletter.eyebrow']}</p>
         <h2 className="font-display text-3xl font-light tracking-[0.04em] lg:text-4xl">
-          Ganhe <span className="font-normal">10% off</span> na primeira compra
+          {content['newsletter.title']}
         </h2>
         <p className="mt-3 max-w-md text-[14px] text-white/85">
-          Assine e receba lançamentos, cupons exclusivos e inspirações de
-          estilo direto no seu e-mail.
+          {content['newsletter.subtitle']}
         </p>
 
         {sent ? (
-          <p className="mt-8 text-white">Obrigada por assinar! Confira seu e-mail em breve. ✨</p>
+          <p className="mt-8 text-white">{content['newsletter.success']}</p>
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
             <input
@@ -40,7 +41,7 @@ export function Newsletter() {
               type="submit"
               className="shrink-0 rounded-full bg-white px-7 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-rose-deep transition-colors hover:bg-ivory"
             >
-              Assinar
+              {content['newsletter.button']}
             </button>
           </form>
         )}

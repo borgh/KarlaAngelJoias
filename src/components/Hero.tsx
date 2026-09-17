@@ -3,50 +3,46 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildWhatsappUrl } from '../data/site'
-import { lineHref } from '../lib/lines'
 
-// Fotos do brand book (Identidade Visual 2025 — Laís Nass Design),
-// extraídas do PDF e otimizadas pra web (public/brand/hero-*.jpg).
-// `position` ajusta o foco no recorte vertical do celular (rosto/peça
-// sempre visíveis, mesmo com a imagem em 16:9 cortada pra retrato).
-// O 1º slide usa os textos editáveis no painel admin (Textos do site →
-// Hero); os outros dois apresentam as linhas da marca.
-const SLIDES = [
-  {
-    src: '/brand/hero-1.jpg',
-    position: '50% 35%',
-    eyebrow: '',
-    title: '',
-    cta: { label: 'Ver mais vendidos', href: '#mais-vendidos' },
-  },
-  {
-    src: '/brand/hero-2.jpg',
-    position: '60% 50%',
-    eyebrow: 'Semijoias · banho de ouro 18k',
-    title: 'Acabamento de\njoalheria, todo dia.',
-    cta: { label: 'Ver semijoias', href: lineHref('semijoia') },
-  },
-  {
-    src: '/brand/hero-3.jpg',
-    position: '55% 40%',
-    eyebrow: 'Easy chic',
-    title: 'Camadas de ouro\npara compor o seu look.',
-    cta: { label: 'Ver joias', href: lineHref('joias') },
-  },
-]
+// Slides vêm de "Textos do site" no admin (hero.slideN_*). Slide sem
+// imagem não aparece. `position` ajusta o foco no recorte do celular.
+const SLIDE_POSITIONS = ['50% 35%', '60% 50%', '55% 40%', '50% 50%']
+
+type Slide = { src: string; position: string; eyebrow: string; title: string; cta: { label: string; href: string } }
+
+function slidesFromContent(content: Record<string, string>): Slide[] {
+  const out: Slide[] = []
+  for (let n = 1; n <= 4; n++) {
+    const src = (content[`hero.slide${n}_image`] || '').trim()
+    if (!src) continue
+    out.push({
+      src,
+      position: SLIDE_POSITIONS[n - 1],
+      eyebrow: content[`hero.slide${n}_eyebrow`] || '',
+      title: content[`hero.slide${n}_title`] || '',
+      cta: {
+        label: content[`hero.slide${n}_cta_label`] || 'Ver peças',
+        href: content[`hero.slide${n}_cta_href`] || '#catalogo',
+      },
+    })
+  }
+  return out
+}
 
 const INTERVAL_MS = 6500
 
 export function Hero() {
   const { content } = useSiteData()
   const whatsappUrl = buildWhatsappUrl(content)
+  const SLIDES = slidesFromContent(content)
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const timer = useRef<number | null>(null)
 
+  const count = Math.max(SLIDES.length, 1)
   const go = useCallback((next: number) => {
-    setIndex(((next % SLIDES.length) + SLIDES.length) % SLIDES.length)
-  }, [])
+    setIndex(((next % count) + count) % count)
+  }, [count])
 
   // Autoplay — pausa quando o mouse está em cima ou quando a aba
   // perde o foco (não gasta bateria trocando slide que ninguém vê).
@@ -66,14 +62,11 @@ export function Hero() {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
-  const slide = SLIDES[index]
-  const eyebrow = index === 0 ? content['hero.eyebrow'] : slide.eyebrow
-  const title =
-    index === 0
-      ? [content['hero.title_line1'], content['hero.title_line2'], content['hero.title_line3']]
-          .filter(Boolean)
-          .join('\n')
-      : slide.title
+  const slide = SLIDES[Math.min(index, SLIDES.length - 1)] ?? {
+    src: '', position: '50% 50%', eyebrow: '', title: '', cta: { label: '', href: '#catalogo' },
+  }
+  const eyebrow = slide.eyebrow
+  const title = slide.title
 
   return (
     <section
@@ -93,6 +86,7 @@ export function Hero() {
           transition={{ duration: 1.1, ease: 'easeInOut' }}
           className="absolute inset-0"
         >
+          {slide.src && (
           <img
             src={slide.src}
             alt=""
@@ -100,6 +94,7 @@ export function Hero() {
             style={{ objectPosition: slide.position }}
             draggable={false}
           />
+          )}
         </motion.div>
       </AnimatePresence>
 
@@ -135,7 +130,7 @@ export function Hero() {
                 rel="noreferrer"
                 className="rounded-full border border-white/60 px-7 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:border-white hover:bg-white/15"
               >
-                Falar no WhatsApp
+                {content['hero.whatsapp_label']}
               </a>
             </div>
           </motion.div>
@@ -143,6 +138,7 @@ export function Hero() {
       </div>
 
       {/* Controles */}
+      {SLIDES.length > 1 && (<>
       <button
         onClick={() => go(index - 1)}
         aria-label="Slide anterior"
@@ -170,6 +166,7 @@ export function Hero() {
           />
         ))}
       </div>
+      </>)}
     </section>
   )
 }

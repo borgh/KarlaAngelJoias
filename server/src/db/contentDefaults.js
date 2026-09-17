@@ -1,10 +1,11 @@
-// Valores padrão (fallback), usados enquanto a API carrega ou caso ela
-// esteja fora do ar. Depois que a API responde, o conteúdo editado no
-// painel administrativo (admin.karlaangeljoias.com.br) sobrescreve estes
-// valores — ver src/context/SiteDataContext.tsx.
-
-// Espelho de server/src/db/contentDefaults.js — fallback quando a API está fora do ar.
-export const DEFAULT_CONTENT: Record<string, string> = {
+// Textos e imagens padrão do site público — FONTE ÚNICA DE VERDADE do
+// que o admin pode editar em "Textos do site". Mantido em espelho em
+// src/data/site.ts (fallback do site se a API estiver fora do ar).
+//
+// O seed aplica esses valores SÓ para chaves que ainda não existem —
+// nunca sobrescreve o que a cliente editou no admin (antes disso, o
+// seed rodava a cada deploy e apagava todas as edições).
+export const CONTENT_DEFAULTS = {
   // Barra de avisos (topo)
   'announcement.text': 'Até 6x sem juros · 5% off no Pix · Frete para todo o Brasil',
 
@@ -110,10 +111,4 @@ export const DEFAULT_CONTENT: Record<string, string> = {
   'contact.instagram_handle': '@karlaangeljoias',
   'contact.instagram_url': 'https://www.instagram.com/karlaangeljoias',
   'contact.email': 'contato@karlaangeljoias.com.br',
-}
-
-export function buildWhatsappUrl(content: Record<string, string>, message?: string) {
-  const base = content['contact.whatsapp_base'] || DEFAULT_CONTENT['contact.whatsapp_base']
-  const text = message ?? content['contact.whatsapp_message'] ?? DEFAULT_CONTENT['contact.whatsapp_message']
-  return `${base}?text=${encodeURIComponent(text)}`
 }

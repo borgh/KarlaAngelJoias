@@ -39,6 +39,12 @@ Símbolo alternativo "A com asa" (`Icone_*.png` do brand book) recortado com tra
 
 Mesmos tokens de cor e fontes do site (`admin/src/index.css`). Sidebar e login em charcoal quente com a logo branca, item ativo em rosé; gráficos do dashboard nas cores da paleta.
 
+## Tudo editável no admin ("Textos do site")
+
+Todos os textos e as fotos do site público (barra de avisos, os até 4 slides do hero com foto/título/botão, linhas, coleções, benefícios, mais vendidos, catálogo, Nossa história com foto, Instagram, newsletter, rodapé, textos de produto, contato) são chaves de `siteContent`. Fonte única dos padrões: `server/src/db/contentDefaults.js`, espelhada em `src/data/site.ts` (fallback com a API fora). A tela do admin (`admin/src/pages/Content.tsx`) lista os campos por seção, na ordem do site; campos `image: true` usam o `ImageUpload`.
+
+**Bug corrigido junto**: o `seed.js` roda a cada subida do container e antes fazia `setMany` incondicional — apagava as edições do admin em todo deploy. Agora só preenche chaves ausentes (e migra o hero antigo `hero.title_line1..3` pro `hero.slide1_title`).
+
 ## Fotos
 
 `public/brand/hero-{1,2,3}.jpg` (carrossel do hero) e `karla.jpg` (seção "Nossa história") foram extraídas do PDF com PyMuPDF e otimizadas (JPEG progressivo, 2000px). O 1º slide usa os textos editáveis no admin (Textos do site → Hero); os outros dois apresentam as linhas Semijoia e Joias.

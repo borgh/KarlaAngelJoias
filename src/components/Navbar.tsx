@@ -49,7 +49,7 @@ export function Navbar() {
           scrolled ? 'max-h-0 py-0' : 'max-h-10 py-2'
         }`}
       >
-        Até 6x sem juros · 5% off no Pix<span className="hidden sm:inline"> · Frete para todo o Brasil</span>
+        {content['announcement.text']}
       </div>
 
       <div

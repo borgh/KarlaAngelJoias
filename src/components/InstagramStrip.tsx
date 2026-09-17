@@ -17,7 +17,7 @@ export function InstagramStrip() {
       <div className="mx-auto max-w-7xl text-center">
         <InstagramIcon className="mx-auto mb-4 text-rose-deep" size={24} />
         <h2 className="font-display text-3xl font-light tracking-[0.04em] text-ink lg:text-4xl">
-          Acompanhe no Instagram
+          {content['instagram.title']}
         </h2>
         <a
           href={instagramUrl}

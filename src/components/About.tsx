@@ -16,12 +16,12 @@ export function About() {
         >
           <div className="absolute -left-3 -top-3 h-full w-full rounded-sm border border-rose lg:-left-5 lg:-top-5" aria-hidden="true" />
           <img
-            src="/brand/karla.jpg"
+            src={content['about.image'] || '/brand/karla.jpg'}
             alt="Karla, fundadora da Karla Angel"
             className="relative aspect-[4/5] w-full rounded-sm object-cover object-top"
             loading="lazy"
           />
-          <span className="font-script absolute -bottom-4 right-4 text-4xl text-rose-deep lg:-bottom-6 lg:text-5xl">Karla</span>
+          <span className="font-script absolute -bottom-4 right-4 text-4xl text-rose-deep lg:-bottom-6 lg:text-5xl">{content['about.signature']}</span>
         </motion.div>
 
         <motion.div
@@ -30,13 +30,11 @@ export function About() {
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.7, delay: 0.1 }}
         >
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">Nossa história</p>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">{content['about.eyebrow']}</p>
           <h2 className="font-display text-3xl font-light tracking-[0.04em] leading-tight text-ink lg:text-4xl">
-            Joalheria pensada
-            <br />
-            para o dia a dia real.
+            <span className="whitespace-pre-line">{content['about.title']}</span>
           </h2>
-          <p className="font-script mt-3 text-2xl text-taupe-deep">easy chic</p>
+          <p className="font-script mt-3 text-2xl text-taupe-deep">{content['about.tagline']}</p>
           <div className="mt-7 space-y-5 text-[15px] leading-relaxed text-ink/70">
             <p>{content['about.paragraph1']}</p>
             <p>{content['about.paragraph2']}</p>

@@ -29,18 +29,17 @@ export function BestSellers() {
         <div className="mb-14 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">
-              Mais vendidos
+              {content['bestsellers.eyebrow']}
             </p>
             <h2 className="font-display text-3xl font-light tracking-[0.04em] leading-tight text-ink lg:text-4xl">
-              As peças favoritas
-              <br className="hidden lg:block" /> de quem já usa Karla Angel.
+              <span className="whitespace-pre-line">{content['bestsellers.title']}</span>
             </h2>
           </div>
           <a
             href="#catalogo"
             className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink/70 underline decoration-rose underline-offset-8 transition-colors hover:text-rose-deep"
           >
-            Ver catálogo completo
+            {content['bestsellers.link']}
           </a>
         </div>
 
@@ -58,7 +57,7 @@ export function BestSellers() {
 
         {products.every((p) => p.images.length === 0) && (
           <p className="mt-8 text-center text-[12px] text-ink/40">
-            Catálogo ilustrativo — fotos reais das peças em breve.
+            {content['bestsellers.note']}
           </p>
         )}
       </div>

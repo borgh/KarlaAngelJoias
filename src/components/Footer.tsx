@@ -15,10 +15,9 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-12 border-b border-taupe/70 pb-14 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <img src="/brand/logo-dark.png" alt="Karla Angel" className="h-5 w-auto" />
-            <p className="font-script mt-2 text-xl text-taupe-deep">easy chic</p>
+            <p className="font-script mt-2 text-xl text-taupe-deep">{content['footer.tagline']}</p>
             <p className="mt-3 max-w-[220px] text-[13px] leading-relaxed text-ink/55">
-              Semijoias autorais com acabamento de joalheria, para o brilho
-              do seu dia a dia.
+              {content['footer.description']}
             </p>
           </div>
 
@@ -65,7 +64,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-3 pt-6 text-[12px] text-ink/40 sm:flex-row">
           <p>© {new Date().getFullYear()} Karla Angel Joias. Todos os direitos reservados.</p>
-          <p>CNPJ: 00.000.000/0001-00 · em preenchimento</p>
+          <p>{content['footer.legal']}</p>
         </div>
       </div>
     </footer>

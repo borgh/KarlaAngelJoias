@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSiteData } from '../context/SiteDataContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Ruler } from 'lucide-react'
 import { ProductImageCarousel } from './ProductImageCarousel'
@@ -19,6 +20,7 @@ export function ProductModal({
   onClose: () => void
 }) {
   const [ringSizerOpen, setRingSizerOpen] = useState(false)
+  const { content } = useSiteData()
   return (
     <AnimatePresence>
       {product && (() => {
@@ -79,7 +81,7 @@ export function ProductModal({
               <p className="mt-5 text-[15px] leading-relaxed text-ink/70">
                 {product.description?.trim()
                   ? product.description
-                  : 'Peça em acabamento de joalheria — antialérgica e pensada para durar. Fale com a gente no WhatsApp para saber mais detalhes, disponibilidade e possibilidade de personalização.'}
+                  : content['product.default_description']}
               </p>
 
               {stock.tone === 'out' ? (
@@ -96,7 +98,7 @@ export function ProductModal({
                   rel="noreferrer"
                   className="mt-8 rounded-full bg-ink py-3.5 text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-ivory transition-colors hover:bg-rose hover:text-white"
                 >
-                  Comprar no WhatsApp
+                  {content['product.buy_label']}
                 </a>
               )}
 

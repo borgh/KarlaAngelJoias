@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { nanoid } from 'nanoid'
 import { store, nowIso } from './store.js'
+import { CONTENT_DEFAULTS } from './contentDefaults.js'
 
 const ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL || 'admin@karlaangeljoias.com.br').toLowerCase()
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'TrocarSenha123!'
@@ -121,30 +122,27 @@ for (const p of store.products.all()) {
   }
 }
 
-// --- Conteúdo do site (hero, história, rodapé) --------------------------
-store.siteContent.setMany({
-  'hero.eyebrow': 'Ouro 18k · Prata 925 · Moissanite',
-  'hero.title_line1': 'Joias para',
-  'hero.title_line2': 'o seu brilho',
-  'hero.title_line3': 'de todo dia.',
-  'hero.subtitle':
-    'Curadoria exclusiva de semijoias de luxo: ouro 18k, prata 925 e peças em moissanite, com o brilho e o acabamento de uma joalheria — para usar todos os dias ou guardar para ocasiões especiais.',
-  'about.paragraph1':
-    'A Karla Angel nasceu de uma curadoria pessoal: peças em ouro 18k, prata 925 e moissanite escolhidas a dedo, com o mesmo padrão de acabamento de uma joalheria — para usar no dia a dia ou guardar para uma data especial.',
-  'about.paragraph2':
-    'Do anel de entrada à riviera cravejada, cada lançamento passa por uma seleção criteriosa antes de chegar até você — com garantia, autenticidade e o cuidado de quem entende de joia.',
-  'about.stat1_number': '+4.300',
-  'about.stat1_label': 'seguidoras no Instagram',
-  'about.stat2_number': '423',
-  'about.stat2_label': 'peças e posts publicados',
-  'about.stat3_number': '100%',
-  'about.stat3_label': 'curadoria exclusiva',
-  'contact.whatsapp_base': 'https://wa.me/message/INYV4PHHJTYVM1',
-  'contact.whatsapp_message': 'Olá! Vim pelo site e gostaria de saber mais sobre as peças da Karla Angel ✨',
-  'contact.instagram_handle': '@karlaangeljoias',
-  'contact.instagram_url': 'https://www.instagram.com/karlaangeljoias',
-  'contact.email': 'contato@karlaangeljoias.com.br',
-})
+// --- Conteúdo do site (textos e imagens editáveis no admin) -----------
+// Só preenche chaves que ainda não existem — NUNCA sobrescreve o que a
+// cliente editou no admin (o seed roda a cada subida do container).
+{
+  const current = store.siteContent.all()
+  const missing = {}
+  for (const [k, v] of Object.entries(CONTENT_DEFAULTS)) {
+    if (current[k] === undefined) missing[k] = v
+  }
+  // Migração do hero antigo (eyebrow + 3 linhas de título) pro slide 1
+  if (current['hero.slide1_title'] === undefined && current['hero.title_line1']) {
+    missing['hero.slide1_title'] = [current['hero.title_line1'], current['hero.title_line2'], current['hero.title_line3']]
+      .filter(Boolean)
+      .join('\n')
+    if (current['hero.eyebrow']) missing['hero.slide1_eyebrow'] = current['hero.eyebrow']
+  }
+  if (Object.keys(missing).length > 0) {
+    store.siteContent.setMany(missing)
+    console.log(`✅ ${Object.keys(missing).length} texto(s)/imagem(ns) padrão do site preenchidos (chaves novas).`)
+  }
+}
 
 // --- Itens de carrossel (Instagram) --------------------------------------
 if (store.carouselItems.filter((i) => i.carousel === 'instagram').length === 0) {

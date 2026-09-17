@@ -4,15 +4,15 @@ import { JewelGlyph } from './JewelGlyph'
 import { LINES, lineHref } from '../lib/lines'
 
 export function Categories() {
-  const { categories } = useSiteData()
+  const { categories, content } = useSiteData()
   return (
     <section id="colecoes" className="bg-ivory px-6 py-20 lg:px-12 lg:py-28">
       <div className="mx-auto max-w-7xl">
         {/* Linhas da marca — 4 blocos grandes, como os "departamentos" do H.Stern */}
         <div className="mb-16 text-center">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">Nossas linhas</p>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">{content['lines.eyebrow']}</p>
           <h2 className="font-display text-3xl font-light tracking-[0.04em] text-ink lg:text-4xl">
-            Escolha o seu brilho
+            {content['lines.title']}
           </h2>
         </div>
         <div className="mb-20 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
@@ -29,13 +29,13 @@ export function Categories() {
               }`}
             >
               <span className="absolute inset-3 rounded-sm border border-white/50 transition-all duration-500 group-hover:inset-2" />
-              <span className="font-script absolute right-5 top-4 text-xl text-white/70 sm:right-6 sm:top-5 sm:text-2xl lg:text-3xl">easy chic</span>
+              <span className="font-script absolute right-5 top-4 text-xl text-white/70 sm:right-6 sm:top-5 sm:text-2xl lg:text-3xl">{content['lines.badge']}</span>
               <h3 className="relative break-words font-display text-[17px] font-light uppercase tracking-[0.08em] text-white sm:text-2xl sm:tracking-[0.14em] lg:text-3xl lg:tracking-[0.16em]">
                 {l.label}
               </h3>
-              <p className="relative mt-1 text-[12px] text-white/85">{l.tagline}</p>
+              <p className="relative mt-1 text-[12px] text-white/85">{content[`lines.${l.id}_tagline`] || l.tagline}</p>
               <span className="relative mt-4 inline-block text-[11px] font-semibold uppercase tracking-[0.2em] text-white underline decoration-white/50 underline-offset-4 transition-all group-hover:decoration-white">
-                Ver peças
+                {content['lines.cta']}
               </span>
             </motion.a>
           ))}
@@ -44,11 +44,11 @@ export function Categories() {
         {/* Categorias por tipo de peça */}
         <div className="mb-10 flex flex-col items-start justify-between gap-3 lg:flex-row lg:items-end">
           <div>
-            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">Coleções</p>
-            <h2 className="font-display text-3xl font-light tracking-[0.04em] text-ink lg:text-4xl">Por tipo de peça</h2>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.3em] text-rose-deep">{content['collections.eyebrow']}</p>
+            <h2 className="font-display text-3xl font-light tracking-[0.04em] text-ink lg:text-4xl">{content['collections.title']}</h2>
           </div>
           <p className="max-w-xs text-[13px] leading-relaxed text-ink/60">
-            Peças desenhadas para se sobrepor sem competir — monte suas combinações.
+            {content['collections.description']}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">

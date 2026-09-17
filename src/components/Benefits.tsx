@@ -1,13 +1,15 @@
 import { Truck, ShieldCheck, CreditCard, Sparkles } from 'lucide-react'
+import { useSiteData } from '../context/SiteDataContext'
 
-const items = [
-  { icon: Truck, title: 'Frete para todo o Brasil', desc: 'Envio cuidadoso, embalagem para presente' },
-  { icon: ShieldCheck, title: 'Garantia de 1 ano', desc: 'Peças antialérgicas, livres de níquel' },
-  { icon: CreditCard, title: 'Até 6x sem juros', desc: 'No cartão de crédito' },
-  { icon: Sparkles, title: '5% off no Pix', desc: 'Desconto à vista' },
-]
+const ICONS = [Truck, ShieldCheck, CreditCard, Sparkles]
 
 export function Benefits() {
+  const { content } = useSiteData()
+  const items = ICONS.map((icon, i) => ({
+    icon,
+    title: content[`benefits.${i + 1}_title`],
+    desc: content[`benefits.${i + 1}_desc`],
+  })).filter((b) => b.title)
   return (
     <section className="border-y border-taupe/60 bg-ivory-dim px-6 py-10 lg:px-12">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 lg:grid-cols-4 lg:gap-4">
