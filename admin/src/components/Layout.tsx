@@ -118,7 +118,7 @@ export default function Layout() {
   )
 
   return (
-    <div className="min-h-screen bg-ivory-dim lg:flex">
+    <div className="min-h-screen bg-ivory-dim lg:flex lg:h-screen lg:overflow-hidden">
       {/* Barra superior — só no celular/tablet */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink/10 bg-ink px-4 py-3.5 text-ivory lg:hidden">
         <button onClick={() => setMobileOpen(true)} aria-label="Abrir menu" className="text-ivory">
@@ -139,7 +139,7 @@ export default function Layout() {
       )}
 
       {/* Sidebar fixa — telas grandes */}
-      <aside className="hidden w-64 shrink-0 flex-col justify-between bg-ink text-ivory lg:flex">
+      <aside className="hidden w-64 shrink-0 flex-col justify-between overflow-y-auto bg-ink text-ivory lg:flex">
         {sidebarContent}
       </aside>
 
