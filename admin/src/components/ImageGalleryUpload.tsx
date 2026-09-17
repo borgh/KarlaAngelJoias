@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Upload, X, Loader2, ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { api } from '../lib/api'
+import { resolveMediaUrl } from '../lib/media'
 
 const MAX_IMAGES = 5
 
@@ -70,7 +71,7 @@ export function ImageGalleryUpload({
       <div className="flex flex-wrap gap-3">
         {images.map((url, i) => (
           <div key={url + i} className="relative w-32">
-            <img src={url} alt="" className="aspect-square w-32 rounded-xl object-cover" />
+            <img src={resolveMediaUrl(url)} alt="" className="aspect-square w-32 rounded-xl object-cover" />
 
             {i === 0 && (
               <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full bg-gold px-2 py-0.5 text-[10px] font-semibold text-ink">

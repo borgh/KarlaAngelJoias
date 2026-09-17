@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Upload, X, Loader2 } from 'lucide-react'
 import { api } from '../lib/api'
+import { resolveMediaUrl } from '../lib/media'
 
 export function ImageUpload({
   value,
@@ -44,7 +45,7 @@ export function ImageUpload({
 
       {value ? (
         <div className="relative w-40">
-          <img src={value} alt="" className="aspect-square w-40 rounded-xl object-cover" />
+          <img src={resolveMediaUrl(value)} alt="" className="aspect-square w-40 rounded-xl object-cover" />
           <button
             type="button"
             onClick={() => onChange('')}
