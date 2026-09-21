@@ -7,6 +7,8 @@ import {
   Users,
   Warehouse,
   Bell,
+  ShoppingBag,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react'
 import type { User } from '../lib/types'
@@ -24,10 +26,12 @@ export const ALL_MOBILE_NAV_OPTIONS: MobileNavOption[] = [
   { to: '/', label: 'Visão geral', icon: LayoutGrid },
   { to: '/produtos', label: 'Produtos', icon: Gem },
   { to: '/estoque', label: 'Estoque', icon: Warehouse },
+  { to: '/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/conteudo', label: 'Textos do site', icon: FileText },
   { to: '/carrossel', label: 'Carrossel Instagram', icon: ImageIcon },
   { to: '/notificacoes', label: 'Notificações', icon: Bell },
+  { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
   { to: '/usuarios', label: 'Usuários', icon: Users, requires: 'canManageUsers' },
 ]
 

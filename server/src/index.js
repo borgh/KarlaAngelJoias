@@ -14,6 +14,7 @@ import { usersRouter } from './routes/users.js'
 import { uploadRouter, UPLOAD_DIR } from './routes/upload.js'
 import { settingsRouter } from './routes/settings.js'
 import { pushRouter } from './routes/push.js'
+import { ordersRouter } from './routes/orders.js'
 import { ensureVapidKeys } from './services/notify.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -59,6 +60,7 @@ app.use('/api/users', usersRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/push', pushRouter)
+app.use('/api/orders', ordersRouter)
 
 app.use((err, req, res, next) => {
   console.error(err)

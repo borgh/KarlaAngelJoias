@@ -11,6 +11,7 @@ import {
   disconnectWhatsApp,
   sendWhatsAppAlert,
 } from '../services/notify.js'
+import { isPaymentConfigured } from '../services/mercadopago.js'
 
 export const settingsRouter = Router()
 
@@ -36,6 +37,16 @@ function serializeSettings(settings) {
     whatsappNotifyNumber: settings.whatsappNotifyNumber,
     whatsappServerConfigured: isWhatsAppServerConfigured(),
     pushVapidPublicKey: settings.push.vapidPublicKey,
+    mercadopago: {
+      mode: settings.mercadopago.mode,
+      sandboxPublicKey: settings.mercadopago.sandboxPublicKey,
+      sandboxAccessTokenSet: !!settings.mercadopago.sandboxAccessToken,
+      productionPublicKey: settings.mercadopago.productionPublicKey,
+      productionAccessTokenSet: !!settings.mercadopago.productionAccessToken,
+      webhookSecretSet: !!settings.mercadopago.webhookSecret,
+      configured: isPaymentConfigured(),
+    },
+    shipping: settings.shipping,
   }
 }
 
@@ -127,4 +138,33 @@ settingsRouter.post('/whatsapp/disconnect', requirePermission('canEdit'), async 
   } catch (err) {
     res.status(400).json({ error: err.message })
   }
+})
+
+// -----------------------------------------------------------------
+// Pagamentos (Mercado Pago) e frete
+// -----------------------------------------------------------------
+settingsRouter.put('/payments', requirePermission('canEdit'), (req, res) => {
+  const body = req.body || {}
+  const patch = { mercadopago: {}, shipping: {} }
+
+  if (body.mode !== undefined) {
+    if (!['sandbox', 'production'].includes(body.mode)) {
+      return res.status(400).json({ error: "mode precisa ser 'sandbox' ou 'production'." })
+    }
+    patch.mercadopago.mode = body.mode
+  }
+  // Campos deixados de fora do body (undefined) mantêm o valor atual —
+  // assim o formulário não precisa reenviar a chave toda vez que só
+  // troca o modo, por exemplo. Uma string vazia explícita APAGA a chave.
+  if (body.sandboxPublicKey !== undefined) patch.mercadopago.sandboxPublicKey = body.sandboxPublicKey
+  if (body.sandboxAccessToken !== undefined) patch.mercadopago.sandboxAccessToken = body.sandboxAccessToken
+  if (body.productionPublicKey !== undefined) patch.mercadopago.productionPublicKey = body.productionPublicKey
+  if (body.productionAccessToken !== undefined) patch.mercadopago.productionAccessToken = body.productionAccessToken
+  if (body.webhookSecret !== undefined) patch.mercadopago.webhookSecret = body.webhookSecret
+
+  if (body.flatRateCents !== undefined) patch.shipping.flatRateCents = Math.max(0, Number(body.flatRateCents) || 0)
+  if (body.freeAboveCents !== undefined) patch.shipping.freeAboveCents = Math.max(0, Number(body.freeAboveCents) || 0)
+
+  const updated = store.settings.update(patch)
+  res.json({ settings: serializeSettings(updated) })
 })

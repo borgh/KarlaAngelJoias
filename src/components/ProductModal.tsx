@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useSiteData } from '../context/SiteDataContext'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Ruler } from 'lucide-react'
+import { X, Ruler, ShoppingBag, MessageCircle } from 'lucide-react'
 import { ProductImageCarousel } from './ProductImageCarousel'
 import { getStockLabel } from '../lib/stockLabel'
+import { useCart } from '../context/CartContext'
 import { RingSizerModal } from './RingSizer/RingSizerModal'
 import type { ProductView } from '../lib/viewTypes'
 
@@ -21,6 +22,7 @@ export function ProductModal({
 }) {
   const [ringSizerOpen, setRingSizerOpen] = useState(false)
   const { content } = useSiteData()
+  const { addItem } = useCart()
   return (
     <AnimatePresence>
       {product && (() => {
@@ -92,14 +94,25 @@ export function ProductModal({
                   Produto esgotado
                 </button>
               ) : (
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-8 rounded-full bg-ink py-3.5 text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-ivory transition-colors hover:bg-rose hover:text-white"
-                >
-                  {content['product.buy_label']}
-                </a>
+                <div className="mt-8 space-y-2.5">
+                  <button
+                    onClick={() => {
+                      addItem(product)
+                      onClose()
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-center text-[12px] font-semibold uppercase tracking-[0.16em] text-ivory transition-colors hover:bg-rose"
+                  >
+                    <ShoppingBag size={16} /> Adicionar à sacola
+                  </button>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-ink/20 py-3.5 text-center text-[12px] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:border-rose hover:bg-rose hover:text-white"
+                  >
+                    <MessageCircle size={15} /> {content['product.buy_label']}
+                  </a>
+                </div>
               )}
 
               {product.glyph === 'ring' && (

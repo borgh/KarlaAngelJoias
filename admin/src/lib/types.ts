@@ -81,9 +81,61 @@ export type NotificationSettings = {
   whatsappNotifyNumber: string
   whatsappServerConfigured: boolean
   pushVapidPublicKey: string
+  mercadopago: {
+    mode: 'sandbox' | 'production'
+    sandboxPublicKey: string
+    sandboxAccessTokenSet: boolean
+    productionPublicKey: string
+    productionAccessTokenSet: boolean
+    webhookSecretSet: boolean
+    configured: boolean
+  }
+  shipping: {
+    flatRateCents: number
+    freeAboveCents: number
+  }
 }
 
 export type WhatsAppStatus = {
   configured: boolean
   state: 'open' | 'connecting' | 'close' | 'unconfigured'
+}
+
+export type OrderStatus = 'pending_payment' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'rejected'
+
+export type OrderItem = {
+  productId: string
+  name: string
+  image: string
+  priceCents: number
+  quantity: number
+}
+
+export type Order = {
+  id: string
+  number: string
+  status: OrderStatus
+  items: OrderItem[]
+  subtotalCents: number
+  shippingCents: number
+  totalCents: number
+  customer: { name: string; email: string; phone: string; document: string }
+  address: {
+    cep: string
+    street: string
+    number: string
+    complement: string
+    neighborhood: string
+    city: string
+    state: string
+  }
+  mpPaymentId: string | null
+  paymentMethod: string | null
+  paymentStatusDetail: string | null
+  trackingCode: string | null
+  notes: string
+  createdAt: string
+  updatedAt: string
+  paidAt: string | null
+  shippedAt: string | null
 }

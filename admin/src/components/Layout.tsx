@@ -13,6 +13,8 @@ import {
   Menu,
   X,
   Smartphone,
+  ShoppingBag,
+  CreditCard,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { InstallPwaButton } from './InstallPwaButton'
@@ -23,10 +25,12 @@ const NAV_ITEMS = [
   { to: '/', label: 'Visão geral', icon: LayoutGrid, end: true },
   { to: '/produtos', label: 'Produtos', icon: Gem },
   { to: '/estoque', label: 'Estoque', icon: Warehouse },
+  { to: '/pedidos', label: 'Pedidos', icon: ShoppingBag },
   { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/conteudo', label: 'Textos do site', icon: FileText },
   { to: '/carrossel', label: 'Carrossel Instagram', icon: ImageIcon },
   { to: '/notificacoes', label: 'Notificações', icon: Bell },
+  { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
   { to: '/usuarios', label: 'Usuários', icon: Users, requires: 'canManageUsers' as const },
 ]
 

@@ -27,6 +27,7 @@ const DEFAULT_DATA = {
   siteContent: {},
   carouselItems: [],
   pushSubscriptions: [],
+  orders: [],
   settings: {
     // Estoque — padrões globais, usados quando o produto e a categoria
     // dele não têm um valor próprio definido.
@@ -52,6 +53,28 @@ const DEFAULT_DATA = {
       vapidPublicKey: '',
       vapidPrivateKey: '',
     },
+
+    // Mercado Pago — chaves deixadas em branco de propósito. A cliente
+    // ainda vai liberar o acesso ao Mercado Pago Developers; até lá,
+    // o checkout do site mostra 'pagamento indisponível no momento' em
+    // vez de quebrar (ver isPaymentConfigured() em services/mercadopago.js).
+    // 'mode' decide qual par de chaves é usado nas cobranças de verdade
+    // — troca pra 'production' só depois de testar em 'sandbox'.
+    mercadopago: {
+      mode: 'sandbox', // 'sandbox' | 'production'
+      sandboxPublicKey: '',
+      sandboxAccessToken: '',
+      productionPublicKey: '',
+      productionAccessToken: '',
+      webhookSecret: '', // opcional — valida a assinatura das notificações do MP
+    },
+
+    // Frete — regra simples (sem integração com transportadora por
+    // enquanto): valor fixo, grátis a partir de um valor de pedido.
+    shipping: {
+      flatRateCents: 1500, // R$ 15,00
+      freeAboveCents: 30000, // grátis a partir de R$ 300,00 (0 = nunca fica grátis)
+    },
   },
 }
 
@@ -72,6 +95,8 @@ function load() {
       ...(parsed.settings || {}),
       smtp: { ...structuredClone(DEFAULT_DATA.settings.smtp), ...(parsed.settings?.smtp || {}) },
       push: { ...structuredClone(DEFAULT_DATA.settings.push), ...(parsed.settings?.push || {}) },
+      mercadopago: { ...structuredClone(DEFAULT_DATA.settings.mercadopago), ...(parsed.settings?.mercadopago || {}) },
+      shipping: { ...structuredClone(DEFAULT_DATA.settings.shipping), ...(parsed.settings?.shipping || {}) },
     }
     return merged
   } catch (err) {
@@ -144,6 +169,7 @@ export const store = {
   products: collection('products'),
   carouselItems: collection('carouselItems'),
   pushSubscriptions: collection('pushSubscriptions'),
+  orders: collection('orders'),
   siteContent: {
     all() {
       return structuredClone(data.siteContent)
@@ -164,6 +190,8 @@ export const store = {
         ...patch,
         smtp: { ...data.settings.smtp, ...(patch.smtp || {}) },
         push: { ...data.settings.push, ...(patch.push || {}) },
+        mercadopago: { ...data.settings.mercadopago, ...(patch.mercadopago || {}) },
+        shipping: { ...data.settings.shipping, ...(patch.shipping || {}) },
       }
       save(data)
       return structuredClone(data.settings)

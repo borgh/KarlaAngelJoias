@@ -12,6 +12,8 @@ import Users from './pages/Users'
 import Stock from './pages/Stock'
 import NotificationSettingsPage from './pages/NotificationSettings'
 import MobileNavSettings from './pages/MobileNavSettings'
+import Orders from './pages/Orders'
+import PaymentSettings from './pages/PaymentSettings'
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/produtos" element={<Products />} />
             <Route path="/estoque" element={<Stock />} />
+            <Route path="/pedidos" element={<Orders />} />
+            <Route path="/pagamentos" element={<PaymentSettings />} />
             <Route path="/categorias" element={<Categories />} />
             <Route path="/conteudo" element={<Content />} />
             <Route path="/carrossel" element={<Carousels />} />

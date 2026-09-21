@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Gem, Tags, Users as UsersIcon, ExternalLink, Star, Image as ImageIcon, AlertTriangle } from 'lucide-react'
+import { Gem, Tags, Users as UsersIcon, ExternalLink, Star, Image as ImageIcon, AlertTriangle, ShoppingBag, Wallet, Clock } from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -17,7 +17,7 @@ import {
 } from 'recharts'
 import { api } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import type { Product, Category, User, CarouselItem } from '../lib/types'
+import type { Product, Category, User, CarouselItem, Order } from '../lib/types'
 
 const GOLD = '#b8935e'
 const GOLD_BRIGHT = '#d6b7b5'
@@ -35,19 +35,22 @@ export default function Dashboard() {
   const [categories, setCategories] = useState<Category[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [igItems, setIgItems] = useState<CarouselItem[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [p, c, ig] = await Promise.all([
+        const [p, c, ig, o] = await Promise.all([
           api.get<{ products: Product[] }>('/api/products/admin'),
           api.get<{ categories: Category[] }>('/api/categories'),
           api.get<{ items: CarouselItem[] }>('/api/carousels/instagram/admin'),
+          api.get<{ orders: Order[] }>('/api/orders/admin/list'),
         ])
         setProducts(p.products)
         setCategories(c.categories)
         setIgItems(ig.items)
+        setOrders(o.orders)
         if (user?.canManageUsers) {
           const u = await api.get<{ users: User[] }>('/api/users')
           setUsers(u.users)
@@ -101,6 +104,13 @@ export default function Dashboard() {
     })
   }, [products])
 
+  const revenueCents = useMemo(
+    () => orders.filter((o) => !['pending_payment', 'cancelled', 'rejected'].includes(o.status)).reduce((sum, o) => sum + o.totalCents, 0),
+    [orders]
+  )
+  const pendingOrders = useMemo(() => orders.filter((o) => o.status === 'pending_payment').length, [orders])
+  const recentOrders = useMemo(() => [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5), [orders])
+
   const avgPrice = useMemo(() => {
     if (products.length === 0) return 0
     return products.reduce((sum, p) => sum + p.price, 0) / products.length
@@ -122,6 +132,34 @@ export default function Dashboard() {
         <StatCard icon={Star} value={products.filter((p) => p.isBestseller).length} label="Mais vendidos" />
         <StatCard icon={ImageIcon} value={igItems.filter((i) => i.imageUrl).length} label="Fotos no carrossel" />
       </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <StatCard icon={Wallet} value={(revenueCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} label="Vendas confirmadas" />
+        <StatCard icon={ShoppingBag} value={orders.length} label="Pedidos no total" />
+        <StatCard icon={Clock} value={pendingOrders} label="Aguardando pagamento" />
+      </div>
+
+      {orders.length > 0 && (
+        <div className="mt-10 rounded-2xl border border-ink/10 bg-white p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-lg text-ink">Pedidos recentes</h2>
+            <Link to="/pedidos" className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide text-rose-deep hover:underline">
+              Ver todos <ExternalLink size={12} />
+            </Link>
+          </div>
+          <div className="divide-y divide-ink/5 text-sm">
+            {recentOrders.map((o) => (
+              <div key={o.id} className="flex items-center justify-between py-2.5">
+                <div>
+                  <p className="font-medium text-ink">{o.number}</p>
+                  <p className="text-[12px] text-ink/50">{o.customer.name}</p>
+                </div>
+                <p className="font-medium text-gold-deep">{(o.totalCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-ink/10 bg-white p-6 lg:col-span-2">
@@ -268,7 +306,7 @@ function StatCard({
   label,
 }: {
   icon: typeof Gem
-  value: number
+  value: number | string
   label: string
 }) {
   return (

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Menu, X, Ruler, ChevronRight } from 'lucide-react'
+import { Menu, X, Ruler, ChevronRight, ShoppingBag } from 'lucide-react'
 import { InstagramIcon } from './icons/InstagramIcon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildWhatsappUrl } from '../data/site'
 import { RingSizerModal } from './RingSizer/RingSizerModal'
 import { LINES, lineHref } from '../lib/lines'
+import { useCart } from '../context/CartContext'
 
 // Menu principal — as 4 linhas da marca primeiro (eixo de navegação
 // pedido pela cliente), depois as seções institucionais já existentes.
@@ -20,6 +21,7 @@ const SECTION_LINKS = [
 
 export function Navbar() {
   const { content } = useSiteData()
+  const { count, open: openCart } = useCart()
   const whatsappUrl = buildWhatsappUrl(content)
   const instagramUrl = content['contact.instagram_url']
   const [scrolled, setScrolled] = useState(false)
@@ -101,6 +103,14 @@ export function Navbar() {
             >
               <InstagramIcon size={19} />
             </a>
+            <button onClick={openCart} aria-label="Ver sacola" className="relative text-ink/70 transition-colors hover:text-rose-deep">
+              <ShoppingBag size={20} strokeWidth={1.4} />
+              {count > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose px-1 text-[9px] font-bold text-white">
+                  {count}
+                </span>
+              )}
+            </button>
             <a
               href={whatsappUrl}
               target="_blank"

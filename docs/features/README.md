@@ -5,6 +5,7 @@ Documentos que explicam **como** cada sistema complexo funciona de verdade — n
 | Documento | Cobre |
 |---|---|
 | [catalogo-e-produtos.md](./catalogo-e-produtos.md) | Site público: cards, modal de detalhes, seção "Mais vendidos" vs. "Catálogo completo" |
+| [checkout-mercado-pago.md](./checkout-mercado-pago.md) | Carrinho, checkout embutido (Payment Brick), pedidos, webhook, gestão de pedidos no admin |
 | [identidade-visual.md](./identidade-visual.md) | Paleta, logo, tipografia (e licenças), fotos e layout do redesign 2025 inspirado no H.Stern |
 | [medidor-de-anel.md](./medidor-de-anel.md) | Medidor de anel com IA (3 camadas: manual, tela, câmera com MediaPipe Hands) |
 | [gestao-de-estoque.md](./gestao-de-estoque.md) | Hierarquia de limite mínimo (produto → categoria → geral), tela de Estoque |

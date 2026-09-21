@@ -4,6 +4,14 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-09-21
+
+### Added
+- Checkout completo com Mercado Pago: carrinho (sacola lateral, persistido em localStorage), checkout embutido em 4 etapas (dados/endereço com busca de CEP, revisão, pagamento via Payment Brick sem sair do site, confirmação), gestão de pedidos no admin (tela Pedidos: lista, filtro, detalhe, status, rastreio) e tela Pagamentos (chaves sandbox/produção, frete). Chaves do Mercado Pago deixadas em branco de propósito — a cliente ainda vai liberar acesso ao Mercado Pago Developers; até lá o checkout mostra aviso claro e cai pro WhatsApp automaticamente, sem quebrar nada. Servidor sempre recalcula preço e confere estoque, nunca confia no carrinho do cliente. Documentado em `docs/features/checkout-mercado-pago.md`.
+
+### Fixed
+- Bug de condição de corrida no formulário de checkout: preencher campos em sequência rápida podia perder o valor de um deles (e-mail ficava vazio mesmo preenchido) por causa de um callback combinado lendo estado desatualizado por closure. Corrigido com `setState` funcional.
+
 ## 2026-09-17
 
 ### Added

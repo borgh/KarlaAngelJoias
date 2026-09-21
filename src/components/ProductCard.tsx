@@ -1,8 +1,9 @@
-import { Images } from 'lucide-react'
+import { Images, ShoppingBag, MessageCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { JewelGlyph } from './JewelGlyph'
 import { Sparkles, Shimmer } from './Sparkles'
 import { getStockLabel } from '../lib/stockLabel'
+import { useCart } from '../context/CartContext'
 import type { ProductView } from '../lib/viewTypes'
 
 const formatBRL = (v: number) =>
@@ -20,6 +21,7 @@ export function ProductCard({
   delay?: number
 }) {
   const stock = getStockLabel(product)
+  const { addItem } = useCart()
 
   return (
     <motion.div
@@ -92,16 +94,29 @@ export function ProductCard({
           Esgotado
         </button>
       ) : (
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="mt-4 whitespace-nowrap rounded-full border border-ink/25 py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.08em] text-ink transition-colors hover:border-rose hover:bg-rose hover:text-white sm:text-[11px] sm:tracking-[0.14em]"
-        >
-          <span className="sm:hidden">Comprar</span>
-          <span className="hidden sm:inline">Comprar no WhatsApp</span>
-        </a>
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              addItem(product)
+            }}
+            className="flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-ink py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.08em] text-ivory transition-colors hover:bg-rose sm:text-[11px] sm:tracking-[0.12em]"
+          >
+            <ShoppingBag size={13} strokeWidth={2} />
+            <span className="sm:hidden">Sacola</span>
+            <span className="hidden sm:inline">Adicionar à sacola</span>
+          </button>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Comprar pelo WhatsApp"
+            className="flex aspect-square shrink-0 items-center justify-center rounded-full border border-ink/25 text-ink transition-colors hover:border-rose hover:bg-rose hover:text-white"
+          >
+            <MessageCircle size={16} strokeWidth={1.8} />
+          </a>
+        </div>
       )}
     </motion.div>
   )
