@@ -20,7 +20,14 @@ Em 2026-10 a integração do servidor foi migrada da **API de Payments** (`POST 
 
 **Pix**: a resposta da order traz `qr_code` (copia e cola), `qr_code_base64` e `ticket_url` em `transactions.payments[0].payment_method`. O servidor devolve isso em `pix` na resposta do `/pay` e em `GET /api/orders/:id` (só enquanto `pending_payment`); a `ConfirmationStep` mostra o QR + botão copiar e consulta o pedido a cada 5 s até o webhook marcar como pago. Expira em 1 dia (`expiration_time: "P1D"`).
 
-Testado com o MP mockado (cartão aprovado, recusado + nova tentativa com Pix, webhook assinado/inválido/tópico antigo, idempotência do débito de estoque, 409 em pedido já pago) — ver histórico do commit da migração.
+Testado com o MP mockado (cartão aprovado, recusado + nova tentativa com Pix, webhook assinado/inválido/tópico antigo, idempotência do débito de estoque, 409 em pedido já pago) e depois **em sandbox de verdade** (2026-10-16), que revelou quatro coisas que a doc do MP não deixa claras:
+
+- **O SDK oficial (3.6.1) engole o erro da API de Orders.** Ela responde `{"errors":[{code,message,details}]}` e o SDK vira isso num "MercadoPago API error" sem detalhe. Por isso `createOrder()`/`getOrder()` usam `fetch` direto (classe `MercadoPagoApiError` com `status`, `code`, `mpMessage` e `body` completo no log); o SDK só fica pro `WebhookSignatureValidator`.
+- **A soma dos `items` tem que bater com `total_amount`** ("Order items total amount sum does not match order total amount") — o frete vai como item "Frete".
+- **Cartão recusado NÃO vem como order `failed`: vem como erro HTTP** "The following transactions failed". `createOrder()` reconhece essa mensagem, reconsulta a order pelo id que aparece no corpo do erro (ou busca por `external_reference`, ou usa o `status_detail` do próprio erro) e devolve `status: 'rejected'` — pro resto do sistema é uma recusa normal. O webhook `order.failed` também chega e marca o pedido como recusado.
+- **Cartões de teste**: o Mastercard `5031 4332 1540 6351` não é reconhecido pela conta de teste (BIN não cadastrado pra MLB); o Visa `4235 6477 2802 5682` funciona (validade 11/30, CVV 123, nome `APRO`/`OTHE`, CPF 123.456.789-09). A conta de teste **não tem Pix** (`/v1/payment_methods` não lista `pix`), então Pix só se valida em produção com um valor baixo.
+
+Pra diagnosticar: `docker logs --tail 80 karlaangeljoias-api | grep -iA3 "Mercado Pago"` mostra o JSON completo do MP; a URL pública `https://api.mercadopago.com/v1/payment_methods/search?public_key=<PUBLIC_KEY>&bins=<8 dígitos>&marketplace=NONE&status=active` confere se a Public Key reconhece a bandeira; o painel do MP (Suas integrações → Webhooks, filtro Ambiente = Teste) lista cada notificação com o status da entrega.
 
 ## Arquitetura
 

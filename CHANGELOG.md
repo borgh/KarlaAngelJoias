@@ -9,6 +9,9 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 ### Changed
 - Integração com o Mercado Pago migrada da API de Payments (em descontinuação) para a **API de Orders** (Checkout Transparente via Orders): `POST /v1/orders` com `transactions.payments[]`, valores como string, tipo do meio de pagamento obrigatório (o Payment Brick repassa `paymentTypeId`/`selectedPaymentMethod`), tradução dos novos status (`processed`/`failed`/`canceled`/`action_required`) pro vocabulário interno, chave de idempotência por tentativa, webhook no tópico `order` validado com o `WebhookSignatureValidator` do SDK. Guarda id da order (`ORD…`) e da transação (`PAY…`).
 
+### Fixed
+- Em sandbox real: erro da API de Orders exposto no log e na tela (o SDK 3.6.1 engolia o corpo do erro — criação/consulta de order agora via fetch direto); frete incluído como item (o MP exige soma dos itens = total); cartão recusado tratado como recusa normal em vez de erro 502 (a API de Orders responde recusa como erro HTTP "The following transactions failed").
+
 ### Added
 - Pix de verdade no checkout: QR code, "copia e cola" com botão de copiar, validade, e a tela de confirmação consulta o pedido sozinha até o pagamento cair.
 - Nova tentativa de pagamento depois de recusa (outro cartão ou Pix) sem criar outro pedido.
