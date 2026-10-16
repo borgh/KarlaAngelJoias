@@ -1,5 +1,7 @@
-import { MercadoPagoConfig, Order, WebhookSignatureValidator } from 'mercadopago'
+import { WebhookSignatureValidator } from 'mercadopago'
 import { store } from '../db/store.js'
+
+const MP_API = 'https://api.mercadopago.com'
 
 // Encapsula toda a integração com o Mercado Pago — o resto do sistema
 // nunca importa o SDK diretamente, só essas funções. Isso deixa um
@@ -46,15 +48,68 @@ export function getPublicPaymentInfo() {
   }
 }
 
-function getClient() {
-  const settings = store.settings.get()
-  const accessToken = activeAccessToken(settings)
+function getAccessToken() {
+  const accessToken = activeAccessToken(store.settings.get())
   if (!accessToken) {
     throw new Error(
       'Mercado Pago ainda não configurado — cadastre as chaves em Configurações → Pagamentos no painel admin.'
     )
   }
-  return new MercadoPagoConfig({ accessToken, options: { timeout: 10000 } })
+  return accessToken
+}
+
+// Erro vindo da API do MP, com o corpo inteiro preservado — a API de
+// Orders responde {"errors":[{code,message,details}]} e o SDK oficial
+// (3.6.1) descarta isso e vira um "MercadoPago API error" genérico,
+// inútil pra diagnosticar. Por isso as chamadas abaixo usam fetch
+// direto em vez do SDK (o SDK ainda é usado pra validar o webhook).
+export class MercadoPagoApiError extends Error {
+  constructor(status, body) {
+    const first = body?.errors?.[0] || body
+    const detail = first?.details?.[0]
+    const msg = [first?.code, first?.message, detail?.message || detail].filter(Boolean).join(' — ') || `HTTP ${status}`
+    super(`Mercado Pago (${status}): ${msg}`)
+    this.name = 'MercadoPagoApiError'
+    this.status = status
+    this.body = body
+    this.code = first?.code || null
+    this.mpMessage = first?.message || null
+  }
+}
+
+async function mpRequest(method, path, { body, idempotencyKey } = {}) {
+  const headers = {
+    Authorization: `Bearer ${getAccessToken()}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  }
+  if (idempotencyKey) headers['X-Idempotency-Key'] = idempotencyKey
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15000)
+  let res
+  try {
+    res = await fetch(MP_API + path, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    })
+  } catch (err) {
+    throw new Error(`Falha de rede ao chamar o Mercado Pago: ${err.message}`)
+  } finally {
+    clearTimeout(timer)
+  }
+
+  const text = await res.text()
+  let json = null
+  try {
+    json = text ? JSON.parse(text) : null
+  } catch {
+    json = { message: text.slice(0, 500) }
+  }
+  if (!res.ok) throw new MercadoPagoApiError(res.status, json)
+  return json
 }
 
 // A API de Orders exige valores como string "12.34" (não number).
@@ -79,9 +134,6 @@ function resolvePaymentType(brickData) {
 // MP no cliente, isso é o que mantém o site fora do escopo de PCI-DSS
 // pra dados de cartão).
 export async function createOrder({ order, brickData, idempotencyKey }) {
-  const client = getClient()
-  const orders = new Order(client)
-
   const paymentType = resolvePaymentType(brickData)
   const isPix = paymentType === 'bank_transfer' || brickData.payment_method_id === 'pix'
 
@@ -134,14 +186,12 @@ export async function createOrder({ order, brickData, idempotencyKey }) {
     })),
   }
 
-  const response = await orders.create({ body, requestOptions: { idempotencyKey } })
+  const response = await mpRequest('POST', '/v1/orders', { body, idempotencyKey })
   return summarizeOrder(response)
 }
 
 export async function getOrder(mpOrderId) {
-  const client = getClient()
-  const orders = new Order(client)
-  const response = await orders.get({ id: mpOrderId })
+  const response = await mpRequest('GET', `/v1/orders/${encodeURIComponent(mpOrderId)}`)
   return summarizeOrder(response)
 }
 

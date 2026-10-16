@@ -212,22 +212,33 @@ ordersRouter.post('/:id/pay', async (req, res) => {
       order: serializePublicOrder(updated),
     })
   } catch (err) {
-    console.error('Erro ao criar pagamento no Mercado Pago:', err.message, err.cause || err.errors || '')
+    // Loga o corpo inteiro que o MP devolveu — é a única forma de saber
+    // qual campo ele recusou.
+    console.error('Erro ao criar pagamento no Mercado Pago:', err.message, err.body ? JSON.stringify(err.body) : '')
     res.status(502).json({ error: friendlyMpError(err) })
   }
 })
 
-// O SDK do MP devolve erros bem técnicos; aqui traduz os mais comuns
-// pra algo que faça sentido na tela da cliente.
+// Traduz os erros mais comuns do MP pra algo que faça sentido na tela
+// da cliente. Quando o MP manda uma mensagem de validação legível, ela
+// vai junto (ajuda a Karla a entender o que aconteceu num pedido real).
 function friendlyMpError(err) {
   const msg = String(err?.message || '')
+  const mp = String(err?.mpMessage || '')
   if (/not configured|não configurado/i.test(msg)) return msg
-  if (/token|card/i.test(msg) && /invalid|expired/i.test(msg)) {
+  if (/invalid users involved/i.test(mp)) {
+    return 'O Mercado Pago não aceita pagamento feito pela própria conta da loja. Em testes, use o e-mail de um comprador de teste.'
+  }
+  if (/token|card/i.test(mp) && /invalid|expired|not found/i.test(mp)) {
     return 'Os dados do cartão não foram aceitos. Confira e tente de novo.'
   }
-  if (/idempotency/i.test(msg)) return 'Esse pagamento já está sendo processado. Aguarde um instante.'
-  if (/timeout|ECONN|network/i.test(msg)) return 'O Mercado Pago demorou pra responder. Tente de novo em instantes.'
-  return 'Não foi possível processar o pagamento agora. Tente de novo ou fale com a gente no WhatsApp.'
+  if (/idempotency/i.test(msg + mp)) return 'Esse pagamento já está sendo processado. Aguarde um instante.'
+  if (/rede|timeout|abort/i.test(msg)) return 'O Mercado Pago demorou pra responder. Tente de novo em instantes.'
+  if (err?.status === 401 || err?.status === 403) {
+    return 'As credenciais do Mercado Pago foram recusadas. Confira as chaves em Configurações → Pagamentos.'
+  }
+  const base = 'Não foi possível processar o pagamento agora. Tente de novo ou fale com a gente no WhatsApp.'
+  return mp ? `${base} (Mercado Pago: ${mp.slice(0, 160)})` : base
 }
 
 // -----------------------------------------------------------------
