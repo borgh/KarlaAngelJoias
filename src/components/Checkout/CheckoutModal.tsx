@@ -9,7 +9,16 @@ import { InfoStep } from './InfoStep'
 import { ReviewStep } from './ReviewStep'
 import { PaymentStep } from './PaymentStep'
 import { ConfirmationStep } from './ConfirmationStep'
-import { EMPTY_ADDRESS, EMPTY_CUSTOMER, type AddressInfo, type CustomerInfo, type OrderResult, type PaymentInfo } from './types'
+import {
+  EMPTY_ADDRESS,
+  EMPTY_CUSTOMER,
+  type AddressInfo,
+  type CustomerInfo,
+  type OrderResult,
+  type PaymentInfo,
+  type PaymentResult,
+  type PixData,
+} from './types'
 
 type Step = 'info' | 'review' | 'payment' | 'confirmation'
 
@@ -23,6 +32,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null)
   const [order, setOrder] = useState<OrderResult | null>(null)
   const [finalStatus, setFinalStatus] = useState<string>('pending')
+  const [pix, setPix] = useState<PixData | null>(null)
 
   // Busca a info de pagamento (chave pública + se está configurado) só
   // quando o checkout abre de verdade — sem chamada desnecessária toda
@@ -41,14 +51,25 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
         setStep('info')
         setOrder(null)
         setFinalStatus('pending')
+        setPix(null)
       }, 300)
       return () => clearTimeout(t)
     }
   }, [open])
 
-  function handlePaymentResult(status: string) {
-    setFinalStatus(status)
+  function handlePaymentResult(result: PaymentResult) {
+    setFinalStatus(result.status)
+    setPix(result.pix)
+    if (result.order) setOrder(result.order)
     setStep('confirmation')
+    if (result.status === 'approved') clear()
+  }
+
+  // A tela de confirmação fica consultando o pedido enquanto o Pix não
+  // cai; quando o webhook do MP marcar como pago, ela avisa aqui pra
+  // esvaziar a sacola e trocar a mensagem.
+  function handleStatusChange(status: string) {
+    setFinalStatus(status)
     if (status === 'approved') clear()
   }
 
@@ -136,7 +157,15 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
               )}
 
               {step === 'confirmation' && order && (
-                <ConfirmationStep order={order} status={finalStatus} whatsappUrl={whatsappUrl} onClose={onClose} />
+                <ConfirmationStep
+                  order={order}
+                  status={finalStatus}
+                  pix={pix}
+                  whatsappUrl={whatsappUrl}
+                  onClose={onClose}
+                  onStatusChange={handleStatusChange}
+                  onRetry={() => setStep('payment')}
+                />
               )}
             </div>
 

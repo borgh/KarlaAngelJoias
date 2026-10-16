@@ -187,12 +187,18 @@ export default function PaymentSettings() {
               type="password"
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder={settings.webhookSecretSet ? '•••••••••••••••• (deixe em branco pra manter)' : 'Em Webhooks → detalhes da assinatura'}
+              placeholder={settings.webhookSecretSet ? '•••••••••••••••• (deixe em branco pra manter)' : 'Em Webhooks → Assinatura secreta'}
               className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm outline-none focus:border-gold"
             />
             <p className="mt-1 text-[11px] text-ink/40">
               Confirma que a notificação de pagamento realmente veio do Mercado Pago. Sem ela, o sistema ainda funciona
               (confere o pagamento direto na API do MP), só fica um pouco menos protegido contra notificações falsas.
+            </p>
+            <p className="mt-2 text-[11px] text-ink/40">
+              No painel do Mercado Pago (Suas integrações → Webhooks), cadastre a URL{' '}
+              <code className="rounded bg-ink/5 px-1">https://karlaangeljoias.com.br/api/orders/webhook/mercadopago</code> e marque o
+              evento <strong>Order (Mercado Pago)</strong> — tanto em "Modo de teste" quanto em "Modo de produção". A
+              integração usa a API de Orders do Mercado Pago (Checkout Transparente).
             </p>
           </div>
         </div>

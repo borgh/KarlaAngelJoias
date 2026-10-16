@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, X, Package, Truck, CheckCircle2, XCircle, Clock, CreditCard, MapPin, User } from 'lucide-react'
+import { Search, X, Package, Truck, CheckCircle2, XCircle, Clock, CreditCard, MapPin, User, RefreshCw } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import type { Order, OrderStatus } from '../lib/types'
 
@@ -28,6 +28,13 @@ const STATUS_ICON: Record<OrderStatus, typeof Clock> = {
   delivered: CheckCircle2,
   cancelled: XCircle,
   rejected: XCircle,
+}
+
+const PAYMENT_TYPE_LABEL: Record<string, string> = {
+  credit_card: 'Cartão de crédito',
+  debit_card: 'Cartão de débito',
+  bank_transfer: 'Pix',
+  ticket: 'Boleto',
 }
 
 const formatBRL = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -159,7 +166,24 @@ function OrderDetail({ order, onClose, onUpdated }: { order: Order; onClose: () 
   const [trackingCode, setTrackingCode] = useState(order.trackingCode || '')
   const [notes, setNotes] = useState(order.notes || '')
   const [saving, setSaving] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState('')
+
+  // Reconsulta o status direto no Mercado Pago — pra quando o webhook
+  // não chegou (ex.: Pix pago mas aqui ainda "aguardando").
+  async function syncWithMp() {
+    setSyncing(true)
+    setError('')
+    try {
+      const data = await api.post<{ order: Order }>(`/api/orders/admin/${order.id}/sync`)
+      setStatus(data.order.status)
+      onUpdated(data.order)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível consultar o Mercado Pago.')
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   async function save() {
     setSaving(true)
@@ -237,10 +261,25 @@ function OrderDetail({ order, onClose, onUpdated }: { order: Order; onClose: () 
               <CreditCard size={13} /> Pagamento
             </p>
             <p className="text-sm text-ink/70">
-              {order.paymentMethod ? `Método: ${order.paymentMethod}` : 'Ainda não processado'}
+              {order.paymentMethod ? `Método: ${PAYMENT_TYPE_LABEL[order.paymentType || ''] || order.paymentType || ''} ${order.paymentMethod}`.trim() : 'Ainda não processado'}
               {order.paymentStatusDetail && ` · ${order.paymentStatusDetail}`}
             </p>
-            {order.mpPaymentId && <p className="text-[12px] text-ink/40">ID Mercado Pago: {order.mpPaymentId}</p>}
+            {order.mpPaymentId && (
+              <p className="text-[12px] text-ink/40">
+                Order Mercado Pago: {order.mpPaymentId}
+                {order.mpTransactionId && ` · Transação: ${order.mpTransactionId}`}
+              </p>
+            )}
+            {order.mpPaymentId && (
+              <button
+                type="button"
+                onClick={syncWithMp}
+                disabled={syncing}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-ink/15 px-3 py-1.5 text-[12px] font-medium text-ink/70 hover:bg-ink/5 disabled:opacity-50"
+              >
+                <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} /> Consultar status no Mercado Pago
+              </button>
+            )}
           </section>
 
           <section className="grid grid-cols-2 gap-4 border-t border-ink/10 pt-5">

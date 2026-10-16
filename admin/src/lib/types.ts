@@ -129,8 +129,10 @@ export type Order = {
     city: string
     state: string
   }
-  mpPaymentId: string | null
+  mpPaymentId: string | null // id da order no Mercado Pago ("ORD...")
+  mpTransactionId?: string | null // id da transação de pagamento ("PAY...")
   paymentMethod: string | null
+  paymentType?: string | null // credit_card | debit_card | bank_transfer (Pix)
   paymentStatusDetail: string | null
   trackingCode: string | null
   notes: string

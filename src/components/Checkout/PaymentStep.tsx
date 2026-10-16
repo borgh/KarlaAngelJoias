@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, Loader2, MessageCircle, ShieldAlert } from 'lucide-react'
 import { apiPost, ApiError } from '../../lib/api'
-import type { OrderResult, PaymentInfo } from './types'
+import type { OrderResult, PaymentInfo, PaymentResult } from './types'
 
 const formatBRL = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -48,7 +48,7 @@ export function PaymentStep({
   paymentInfo: PaymentInfo
   whatsappFallbackUrl: string
   onBack: () => void
-  onResult: (status: string, statusDetail: string | null) => void
+  onResult: (result: PaymentResult) => void
 }) {
   const [brickReady, setBrickReady] = useState(false)
   const [error, setError] = useState('')
@@ -81,11 +81,22 @@ export function PaymentStep({
               console.error('Erro no Payment Brick:', brickError)
               if (!cancelled) setError('O formulário de pagamento teve um problema. Recarregue a página e tente de novo.')
             },
-            onSubmit: ({ formData }: { formData: Record<string, unknown> }) =>
+            // O Brick manda o token do cartão (ou só o método, no Pix) em
+            // formData; o TIPO (credit_card / debit_card / bank_transfer)
+            // vem em selectedPaymentMethod e em additionalData.paymentTypeId
+            // — a API de Orders precisa dele, então vai junto pro servidor.
+            onSubmit: (
+              { selectedPaymentMethod, formData }: { selectedPaymentMethod: string; formData: Record<string, unknown> },
+              additionalData?: { paymentTypeId?: string }
+            ) =>
               new Promise<void>((resolve, reject) => {
-                apiPost<{ status: string; statusDetail: string | null; order: OrderResult }>(`/api/orders/${order.id}/pay`, formData)
+                apiPost<PaymentResult>(`/api/orders/${order.id}/pay`, {
+                  ...formData,
+                  selectedPaymentMethod,
+                  paymentTypeId: additionalData?.paymentTypeId,
+                })
                   .then((res) => {
-                    onResult(res.status, res.statusDetail)
+                    onResult(res)
                     resolve()
                   })
                   .catch((err) => {

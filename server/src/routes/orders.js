@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 import { store, nowIso } from '../db/store.js'
 import { requireAuth, requirePermission } from '../auth.js'
 import { checkAndNotifyLowStock, sendEmailAlert, sendWhatsAppAlert } from '../services/notify.js'
-import { createPayment, getPayment, verifyWebhookSignature, isPaymentConfigured, getPublicPaymentInfo } from '../services/mercadopago.js'
+import { createOrder, getOrder, verifyWebhookSignature, isPaymentConfigured, getPublicPaymentInfo } from '../services/mercadopago.js'
 
 export const ordersRouter = Router()
 
@@ -44,7 +44,45 @@ function serializePublicOrder(order) {
     customerName: order.customer.name,
     createdAt: order.createdAt,
     paymentStatusDetail: order.paymentStatusDetail,
+    paymentMethod: order.paymentMethod,
+    // QR code/copia-e-cola do Pix — o site precisa disso na tela de
+    // confirmação enquanto o pagamento ainda não caiu.
+    pix: order.status === 'pending_payment' ? order.pix || null : null,
   }
+}
+
+// Aplica o resultado (já traduzido pelo serviço) de uma order do MP ao
+// nosso pedido. Mesma regra pro /pay e pro webhook, assim os dois
+// caminhos nunca divergem. Retorna o pedido atualizado e se ele acabou
+// de ser aprovado agora (pra debitar estoque uma única vez).
+function applyMpResult(order, result) {
+  const alreadySettled = order.status === 'paid' || order.status === 'shipped' || order.status === 'delivered'
+  const approved = result.status === 'approved'
+
+  let status = order.status
+  if (approved) status = 'paid'
+  else if (result.status === 'rejected') status = 'rejected'
+  else if (result.status === 'cancelled' && !alreadySettled) status = 'cancelled'
+  else if (result.status === 'pending' && (order.status === 'rejected' || order.status === 'cancelled')) {
+    // nova tentativa (ex.: gerou Pix depois de um cartão recusado)
+    status = 'pending_payment'
+  }
+  // refunded / charged_back: deixa o status como está e registra no
+  // detalhe — a dona da loja decide manualmente no admin o que fazer.
+
+  const updated = store.orders.update(order.id, {
+    mpPaymentId: result.id ? String(result.id) : order.mpPaymentId,
+    mpTransactionId: result.paymentId ? String(result.paymentId) : order.mpTransactionId || null,
+    paymentMethod: result.paymentMethodId || order.paymentMethod,
+    paymentType: result.paymentType || order.paymentType || null,
+    paymentStatusDetail: result.statusDetail || result.rawStatus || order.paymentStatusDetail,
+    pix: result.pix || order.pix || null,
+    status,
+    paidAt: approved ? order.paidAt || nowIso() : order.paidAt,
+    updatedAt: nowIso(),
+  })
+
+  return { updated, justApproved: approved && !alreadySettled }
 }
 
 function serializeAdminOrder(order) {
@@ -122,9 +160,12 @@ ordersRouter.post('/', async (req, res) => {
       city: String(address.city).slice(0, 100),
       state: String(address.state).slice(0, 2).toUpperCase(),
     },
-    mpPaymentId: null,
+    mpPaymentId: null, // id da order no MP ("ORD...")
+    mpTransactionId: null, // id da transação de pagamento dentro da order ("PAY...")
     paymentMethod: null,
+    paymentType: null,
     paymentStatusDetail: null,
+    pix: null,
     trackingCode: null,
     notes: '',
     createdAt: now,
@@ -144,38 +185,58 @@ ordersRouter.post('/', async (req, res) => {
 ordersRouter.post('/:id/pay', async (req, res) => {
   const order = store.orders.find((o) => o.id === req.params.id)
   if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' })
-  if (order.status !== 'pending_payment') {
+  // "rejected" também pode tentar de novo (outro cartão, ou Pix) — o
+  // que não pode é pagar duas vezes um pedido já pago/enviado.
+  if (order.status !== 'pending_payment' && order.status !== 'rejected') {
     return res.status(409).json({ error: 'Este pedido já foi processado.' })
   }
 
   try {
-    const result = await createPayment({ order, brickData: req.body || {}, idempotencyKey: order.id })
-    const approved = result.status === 'approved'
-    const updated = store.orders.update(order.id, {
-      mpPaymentId: String(result.id),
-      paymentMethod: result.payment_method_id,
-      paymentStatusDetail: result.status_detail,
-      status: approved ? 'paid' : result.status === 'rejected' ? 'rejected' : 'pending_payment',
-      paidAt: approved ? nowIso() : null,
-      updatedAt: nowIso(),
-    })
+    // Chave de idempotência por TENTATIVA: se o cartão for recusado e
+    // a cliente tentar outro, o MP precisa ver uma order nova (reusar a
+    // mesma chave com corpo diferente dá 409 no MP).
+    const attempt = (order.paymentAttempts || 0) + 1
+    store.orders.update(order.id, { paymentAttempts: attempt })
 
-    if (approved) {
+    const result = await createOrder({ order, brickData: req.body || {}, idempotencyKey: `${order.id}-${attempt}` })
+    const { updated, justApproved } = applyMpResult(order, result)
+
+    if (justApproved) {
       await settleStockAndNotify(updated)
     }
 
-    res.json({ status: result.status, statusDetail: result.status_detail, order: serializePublicOrder(updated) })
+    res.json({
+      status: result.status,
+      statusDetail: result.statusDetail,
+      pix: result.pix,
+      order: serializePublicOrder(updated),
+    })
   } catch (err) {
-    console.error('Erro ao criar pagamento no Mercado Pago:', err.message)
-    res.status(502).json({ error: err.message || 'Falha ao processar o pagamento.' })
+    console.error('Erro ao criar pagamento no Mercado Pago:', err.message, err.cause || err.errors || '')
+    res.status(502).json({ error: friendlyMpError(err) })
   }
 })
 
+// O SDK do MP devolve erros bem técnicos; aqui traduz os mais comuns
+// pra algo que faça sentido na tela da cliente.
+function friendlyMpError(err) {
+  const msg = String(err?.message || '')
+  if (/not configured|não configurado/i.test(msg)) return msg
+  if (/token|card/i.test(msg) && /invalid|expired/i.test(msg)) {
+    return 'Os dados do cartão não foram aceitos. Confira e tente de novo.'
+  }
+  if (/idempotency/i.test(msg)) return 'Esse pagamento já está sendo processado. Aguarde um instante.'
+  if (/timeout|ECONN|network/i.test(msg)) return 'O Mercado Pago demorou pra responder. Tente de novo em instantes.'
+  return 'Não foi possível processar o pagamento agora. Tente de novo ou fale com a gente no WhatsApp.'
+}
+
 // -----------------------------------------------------------------
-// Webhook do Mercado Pago — a notificação em si só avisa "algo
-// mudou"; a gente SEMPRE busca o pagamento de novo na API do MP
-// (nunca confia em valores que vêm no corpo do webhook) antes de
+// Webhook do Mercado Pago (tópico "order") — a notificação em si só
+// avisa "algo mudou"; a gente SEMPRE busca a order de novo na API do
+// MP (nunca confia em valores que vêm no corpo do webhook) antes de
 // atualizar o pedido. Idempotente: se já estava pago, não reprocessa.
+// É por isso que a chave secreta do webhook vazar não permite forjar
+// um pagamento: o status sempre vem da consulta autenticada ao MP.
 // -----------------------------------------------------------------
 ordersRouter.post('/webhook/mercadopago', async (req, res) => {
   // Responde 200 rápido pro MP não ficar reenviando, mesmo que a
@@ -185,35 +246,45 @@ ordersRouter.post('/webhook/mercadopago', async (req, res) => {
     return res.sendStatus(200)
   }
 
-  const paymentId = req.query['data.id'] || req.body?.data?.id
-  const type = req.query.type || req.body?.type
-  if (type !== 'payment' || !paymentId) return res.sendStatus(200)
+  const dataId = req.query['data.id'] || req.query.data_id || req.body?.data?.id
+  const type = String(req.query.type || req.body?.type || '').toLowerCase()
+  // "order" é o tópico da API de Orders. "payment" era o da API antiga —
+  // se ainda chegar algum (configuração antiga no painel), ignora.
+  if (!['order', 'orders'].includes(type) || !dataId) return res.sendStatus(200)
 
   try {
-    const payment = await getPayment(paymentId)
-    const orderId = payment.external_reference
-    const order = orderId && store.orders.find((o) => o.id === orderId)
+    const result = await getOrder(String(dataId))
+    const order = result.externalReference && store.orders.find((o) => o.id === result.externalReference)
     if (!order) return res.sendStatus(200)
 
-    const alreadySettled = order.status === 'paid' || order.status === 'shipped' || order.status === 'delivered'
-    const approved = payment.status === 'approved'
-
-    const updated = store.orders.update(order.id, {
-      mpPaymentId: String(payment.id),
-      paymentMethod: payment.payment_method_id,
-      paymentStatusDetail: payment.status_detail,
-      status: approved ? 'paid' : payment.status === 'rejected' ? 'rejected' : order.status,
-      paidAt: approved ? order.paidAt || nowIso() : order.paidAt,
-      updatedAt: nowIso(),
-    })
-
-    if (approved && !alreadySettled) {
+    const { updated, justApproved } = applyMpResult(order, result)
+    if (justApproved) {
       await settleStockAndNotify(updated)
     }
   } catch (err) {
     console.error('Erro processando webhook do Mercado Pago:', err.message)
   }
   res.sendStatus(200)
+})
+
+// -----------------------------------------------------------------
+// Admin — reconsulta o status no MP na hora (útil se o webhook não
+// chegou, ex.: Pix pago mas o painel ainda mostra "aguardando").
+// -----------------------------------------------------------------
+ordersRouter.post('/admin/:id/sync', requireAuth, requirePermission('canEdit'), async (req, res) => {
+  const order = store.orders.find((o) => o.id === req.params.id)
+  if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' })
+  if (!order.mpPaymentId) return res.status(409).json({ error: 'Esse pedido ainda não tem pagamento no Mercado Pago.' })
+
+  try {
+    const result = await getOrder(order.mpPaymentId)
+    const { updated, justApproved } = applyMpResult(order, result)
+    if (justApproved) await settleStockAndNotify(updated)
+    res.json({ order: serializeAdminOrder(updated), mpStatus: result.rawStatus })
+  } catch (err) {
+    console.error('Erro ao sincronizar pedido com o Mercado Pago:', err.message)
+    res.status(502).json({ error: 'Não foi possível consultar o Mercado Pago agora.' })
+  }
 })
 
 // Debita o estoque e reaproveita o mesmo alerta de estoque baixo já

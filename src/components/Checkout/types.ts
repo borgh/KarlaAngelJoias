@@ -26,6 +26,24 @@ export type OrderResult = {
   customerName: string
   createdAt: string
   paymentStatusDetail: string | null
+  paymentMethod?: string | null
+  pix?: PixData | null
+}
+
+// Dados do Pix devolvidos pela API de Orders do Mercado Pago — o site
+// mostra o QR code e o "copia e cola" enquanto o pagamento não cai.
+export type PixData = {
+  qrCode: string | null
+  qrCodeBase64: string | null
+  ticketUrl: string | null
+  expiresAt: string | null
+}
+
+export type PaymentResult = {
+  status: string // approved | pending | rejected | cancelled
+  statusDetail: string | null
+  pix: PixData | null
+  order: OrderResult
 }
 
 export type PaymentInfo = {

@@ -4,6 +4,16 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-10-16
+
+### Changed
+- Integração com o Mercado Pago migrada da API de Payments (em descontinuação) para a **API de Orders** (Checkout Transparente via Orders): `POST /v1/orders` com `transactions.payments[]`, valores como string, tipo do meio de pagamento obrigatório (o Payment Brick repassa `paymentTypeId`/`selectedPaymentMethod`), tradução dos novos status (`processed`/`failed`/`canceled`/`action_required`) pro vocabulário interno, chave de idempotência por tentativa, webhook no tópico `order` validado com o `WebhookSignatureValidator` do SDK. Guarda id da order (`ORD…`) e da transação (`PAY…`).
+
+### Added
+- Pix de verdade no checkout: QR code, "copia e cola" com botão de copiar, validade, e a tela de confirmação consulta o pedido sozinha até o pagamento cair.
+- Nova tentativa de pagamento depois de recusa (outro cartão ou Pix) sem criar outro pedido.
+- Admin → Pedidos: botão "Consultar status no Mercado Pago" (`POST /api/orders/admin/:id/sync`) e exibição do tipo de pagamento (crédito/débito/Pix) e ids do MP. Tela Pagamentos explica a URL e o evento (Order) do webhook.
+
 ## 2026-09-21
 
 ### Added
