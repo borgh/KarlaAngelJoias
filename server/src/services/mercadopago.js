@@ -178,12 +178,19 @@ export async function createOrder({ order, brickData, idempotencyKey }) {
         },
       ],
     },
-    items: order.items.map((i) => ({
-      title: i.name,
-      unit_price: toAmount(i.priceCents),
-      quantity: i.quantity,
-      external_code: i.productId,
-    })),
+    // O MP exige que a soma dos itens seja exatamente igual ao
+    // total_amount — então o frete entra como um item também.
+    items: [
+      ...order.items.map((i) => ({
+        title: i.name,
+        unit_price: toAmount(i.priceCents),
+        quantity: i.quantity,
+        external_code: i.productId,
+      })),
+      ...(order.shippingCents > 0
+        ? [{ title: 'Frete', unit_price: toAmount(order.shippingCents), quantity: 1, external_code: 'frete' }]
+        : []),
+    ],
   }
 
   const response = await mpRequest('POST', '/v1/orders', { body, idempotencyKey })
