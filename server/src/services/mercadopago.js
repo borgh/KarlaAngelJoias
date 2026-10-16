@@ -193,8 +193,90 @@ export async function createOrder({ order, brickData, idempotencyKey }) {
     ],
   }
 
-  const response = await mpRequest('POST', '/v1/orders', { body, idempotencyKey })
-  return summarizeOrder(response)
+  try {
+    const response = await mpRequest('POST', '/v1/orders', { body, idempotencyKey })
+    return summarizeOrder(response)
+  } catch (err) {
+    // Cartão RECUSADO não vem como order com status "failed" — a API de
+    // Orders responde erro HTTP (402/422) "The following transactions
+    // failed". Pro nosso fluxo isso é uma recusa normal (pedido vira
+    // "rejected" e a cliente pode tentar outro cartão), não uma falha
+    // de sistema. Recupera a order que o MP criou pra pegar o motivo.
+    if (err instanceof MercadoPagoApiError && /transactions? failed/i.test(err.mpMessage || err.message)) {
+      console.warn('Pagamento recusado pelo Mercado Pago:', JSON.stringify(err.body))
+      return recoverRejectedOrder(err.body, order.id)
+    }
+    throw err
+  }
+}
+
+// Procura, em qualquer nível do JSON de erro, os ids da order/transação
+// e o status_detail — o formato exato desse corpo não está documentado,
+// então não dá pra depender de um caminho fixo.
+function collectDeep(value, out = { orderId: null, paymentId: null, statusDetail: null, paymentMethodId: null, paymentType: null }) {
+  if (!value || typeof value !== 'object') return out
+  if (Array.isArray(value)) {
+    for (const v of value) collectDeep(v, out)
+    return out
+  }
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === 'string') {
+      if (/^ORD[A-Z0-9]+$/i.test(v) && !out.orderId) out.orderId = v
+      else if (/^PAY[A-Z0-9]+$/i.test(v) && !out.paymentId) out.paymentId = v
+      if (k === 'status_detail' && !out.statusDetail) out.statusDetail = v
+      if (k === 'order_id' && !out.orderId) out.orderId = v
+    } else {
+      collectDeep(v, out)
+    }
+  }
+  return out
+}
+
+async function recoverRejectedOrder(errorBody, externalReference) {
+  const found = collectDeep(errorBody)
+
+  // Melhor caminho: buscar a order pelo id — vem completa (método,
+  // parcelas, status_detail oficial).
+  if (found.orderId) {
+    try {
+      const full = await getOrder(found.orderId)
+      if (full.status !== 'pending') return full
+      // se por algum motivo ainda não consolidou, cai no fallback abaixo
+      found.paymentMethodId = full.paymentMethodId
+      found.paymentType = full.paymentType
+    } catch (e) {
+      console.warn('Não consegui reconsultar a order recusada:', e.message)
+    }
+  }
+
+  // Fallback: busca pela referência externa (nosso id de pedido).
+  if (!found.orderId) {
+    try {
+      const search = await mpRequest(
+        'GET',
+        `/v1/orders/search?external_reference=${encodeURIComponent(externalReference)}&limit=5`
+      )
+      const list = (search?.results || search?.elements || []).sort((a, b) =>
+        String(b.created_date || '').localeCompare(String(a.created_date || ''))
+      )
+      if (list[0]) return summarizeOrder(list[0])
+    } catch (e) {
+      console.warn('Não consegui buscar a order recusada por referência:', e.message)
+    }
+  }
+
+  return {
+    id: found.orderId,
+    paymentId: found.paymentId,
+    status: 'rejected',
+    rawStatus: 'failed',
+    statusDetail: found.statusDetail || 'rejected',
+    paymentMethodId: found.paymentMethodId,
+    paymentType: found.paymentType,
+    externalReference,
+    totalPaidAmount: null,
+    pix: null,
+  }
 }
 
 export async function getOrder(mpOrderId) {
