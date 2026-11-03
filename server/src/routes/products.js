@@ -25,6 +25,14 @@ function sanitizeImages(images) {
   return images.filter((url) => typeof url === 'string' && url.trim() !== '').slice(0, MAX_PRODUCT_IMAGES)
 }
 
+// Produtos relacionados escolhidos à mão (até 8 ids de produtos distintos).
+// Se vazio, o site sugere automaticamente os mais parecidos.
+const MAX_RELATED = 8
+function sanitizeRelated(ids, selfId) {
+  if (!Array.isArray(ids)) return []
+  return [...new Set(ids.filter((id) => typeof id === 'string' && id && id !== selfId))].slice(0, MAX_RELATED)
+}
+
 function serializeWithStockInfo(row) {
   const { threshold } = resolveStockRules(row)
   return {
@@ -45,6 +53,7 @@ function serializePublic(row) {
     badge: row.badge,
     description: row.description,
     line: row.line ?? null,
+    relatedIds: Array.isArray(row.relatedIds) ? row.relatedIds : [],
     images,
     imageUrl: images[0] || '', // compatibilidade: quem ainda ler só imageUrl continua funcionando
     isBestseller: row.isBestseller,
@@ -90,6 +99,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     line,
     imageUrl,
     images,
+    relatedIds,
     isBestseller,
     sortOrder,
     stockQuantity,
@@ -101,8 +111,9 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
   }
   const now = nowIso()
   const sanitizedImages = sanitizeImages(images ?? (imageUrl ? [imageUrl] : []))
+  const newId = nanoid()
   const product = store.products.insert({
-    id: nanoid(),
+    id: newId,
     name,
     categoryId: categoryId || null,
     price: Number(price) || 0,
@@ -111,6 +122,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     line: sanitizeLine(line),
     imageUrl: sanitizedImages[0] || '',
     images: sanitizedImages,
+    relatedIds: sanitizeRelated(relatedIds, newId),
     isBestseller: !!isBestseller,
     isActive: true,
     sortOrder: Number(sortOrder) || 0,
@@ -138,6 +150,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     line,
     imageUrl,
     images,
+    relatedIds,
     isBestseller,
     isActive,
     sortOrder,
@@ -158,6 +171,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     line: line !== undefined ? sanitizeLine(line) : (existing.line ?? null),
     images: sanitizedImages ?? existing.images ?? [],
     imageUrl: (sanitizedImages ?? existing.images ?? [])[0] || '',
+    relatedIds: relatedIds !== undefined ? sanitizeRelated(relatedIds, existing.id) : (existing.relatedIds ?? []),
     isBestseller: isBestseller !== undefined ? !!isBestseller : existing.isBestseller,
     isActive: isActive !== undefined ? !!isActive : existing.isActive,
     sortOrder: sortOrder !== undefined ? Number(sortOrder) : existing.sortOrder,

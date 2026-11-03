@@ -41,6 +41,7 @@ export type Product = {
   line: ProductLine | null
   imageUrl: string
   images: string[]
+  relatedIds?: string[]
   isBestseller: boolean
   isActive: boolean
   sortOrder: number

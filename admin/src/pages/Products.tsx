@@ -8,7 +8,7 @@ import { ImageGalleryUpload } from '../components/ImageGalleryUpload'
 
 type ProductFormFields = Pick<
   Product,
-  'name' | 'categoryId' | 'line' | 'price' | 'badge' | 'description' | 'images' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
+  'name' | 'categoryId' | 'line' | 'price' | 'badge' | 'description' | 'images' | 'relatedIds' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
 >
 
 const EMPTY_FORM: ProductFormFields = {
@@ -19,6 +19,7 @@ const EMPTY_FORM: ProductFormFields = {
   badge: '',
   description: '',
   images: [],
+  relatedIds: [],
   isBestseller: false,
   isActive: true,
   sortOrder: 0,
@@ -35,6 +36,7 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [relatedSearch, setRelatedSearch] = useState('')
 
   async function load() {
     setLoading(true)
@@ -57,6 +59,7 @@ export default function Products() {
   function openCreate() {
     setEditing(null)
     setForm(EMPTY_FORM)
+    setRelatedSearch('')
     setError('')
     setShowForm(true)
   }
@@ -71,11 +74,13 @@ export default function Products() {
       description: p.description,
       line: p.line ?? null,
       images: p.images ?? (p.imageUrl ? [p.imageUrl] : []),
+      relatedIds: p.relatedIds ?? [],
       isBestseller: p.isBestseller,
       isActive: p.isActive,
       sortOrder: p.sortOrder,
       stockQuantity: p.stockQuantity,
     })
+    setRelatedSearch('')
     setError('')
     setShowForm(true)
   }
@@ -323,6 +328,45 @@ export default function Products() {
                   rows={3}
                   className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold"
                 />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
+                  Produtos relacionados ("Você também vai gostar")
+                </label>
+                <p className="mb-2 text-[11px] text-ink/40">
+                  Opcional. Marque até 8 peças para sugerir junto deste produto. Se não marcar nenhuma,
+                  o site sugere automaticamente as mais parecidas (mesma linha, tipo de peça e faixa de preço).
+                </p>
+                <input
+                  value={relatedSearch}
+                  onChange={(e) => setRelatedSearch(e.target.value)}
+                  placeholder="Buscar produto…"
+                  className="mb-2 w-full rounded-lg border border-ink/15 px-3 py-2 text-sm outline-none focus:border-gold"
+                />
+                <div className="max-h-44 space-y-1 overflow-y-auto rounded-lg border border-ink/10 p-2">
+                  {products
+                    .filter((o) => o.id !== editing?.id)
+                    .filter((o) => (form.relatedIds ?? []).includes(o.id) || o.name.toLowerCase().includes(relatedSearch.toLowerCase()))
+                    .map((o) => {
+                      const selected = (form.relatedIds ?? []).includes(o.id)
+                      const atLimit = !selected && (form.relatedIds ?? []).length >= 8
+                      return (
+                        <label key={o.id} className={`flex items-center gap-2 rounded px-2 py-1 text-sm ${atLimit ? 'text-ink/30' : 'text-ink/75'}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            disabled={atLimit}
+                            onChange={(e) => {
+                              const cur = form.relatedIds ?? []
+                              setForm({ ...form, relatedIds: e.target.checked ? [...cur, o.id] : cur.filter((id) => id !== o.id) })
+                            }}
+                          />
+                          {o.name}
+                        </label>
+                      )
+                    })}
+                </div>
               </div>
 
               <div className="flex items-center gap-6">

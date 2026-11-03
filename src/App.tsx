@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SiteDataProvider } from './context/SiteDataContext'
 import { CartProvider, useCart } from './context/CartContext'
+import { ProductViewerProvider } from './context/ProductViewerContext'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { Categories } from './components/Categories'
@@ -40,6 +41,7 @@ function App() {
   return (
     <SiteDataProvider>
       <CartProvider>
+        <ProductViewerProvider>
         <div className="font-body">
           <Navbar />
           <main>
@@ -56,6 +58,7 @@ function App() {
           <WhatsAppFloat />
           <CartAndCheckout />
         </div>
+        </ProductViewerProvider>
       </CartProvider>
     </SiteDataProvider>
   )

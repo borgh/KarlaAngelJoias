@@ -10,18 +10,19 @@ import { useCart } from '../context/CartContext'
 
 // Menu principal — as 4 linhas da marca primeiro (eixo de navegação
 // pedido pela cliente), depois as seções institucionais já existentes.
-const LINE_LINKS = LINES.map((l) => ({ href: lineHref(l.id), label: l.label }))
-const SECTION_LINKS = [
-  { href: '#colecoes', label: 'Coleções' },
-  { href: '#mais-vendidos', label: 'Mais vendidos' },
-  { href: '#catalogo', label: 'Catálogo' },
-  { href: '#historia', label: 'Nossa história' },
-  { href: '#contato', label: 'Contato' },
+const SECTION_DEFS = [
+  { href: '#colecoes', key: 'nav.collections', fallback: 'Coleções' },
+  { href: '#mais-vendidos', key: 'nav.bestsellers', fallback: 'Mais vendidos' },
+  { href: '#catalogo', key: 'nav.catalog', fallback: 'Catálogo' },
+  { href: '#historia', key: 'nav.about', fallback: 'Nossa história' },
+  { href: '#contato', key: 'nav.contact', fallback: 'Contato' },
 ]
 
 export function Navbar() {
   const { content } = useSiteData()
   const { count, open: openCart } = useCart()
+  const LINE_LINKS = LINES.map((l) => ({ href: lineHref(l.id), label: content[`nav.line_${l.id}`] || l.label }))
+  const SECTION_LINKS = SECTION_DEFS.map((d) => ({ href: d.href, label: content[d.key] || d.fallback }))
   const whatsappUrl = buildWhatsappUrl(content)
   const instagramUrl = content['contact.instagram_url']
   const [scrolled, setScrolled] = useState(false)

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ProductCard } from './ProductCard'
-import { ProductModal } from './ProductModal'
+import { useProductViewer } from '../context/ProductViewerContext'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildWhatsappUrl } from '../data/site'
 import { CATALOG_HASH_PREFIX, LINES, lineFromHash, lineHref, type ProductLine } from '../lib/lines'
@@ -18,7 +18,7 @@ function whatsappFor(content: Record<string, string>, p: ProductView) {
 
 export function Catalog() {
   const { products, categories, content } = useSiteData()
-  const [selected, setSelected] = useState<ProductView | null>(null)
+  const { open: openProduct } = useProductViewer()
   const [activeCategory, setActiveCategory] = useState<string>('Todas')
   const [activeLine, setActiveLine] = useState<ProductLine | null>(null)
 
@@ -135,7 +135,7 @@ export function Catalog() {
                 key={p.id}
                 product={p}
                 whatsappUrl={whatsappFor(content, p)}
-                onSelect={setSelected}
+                onSelect={openProduct}
                 delay={(i % 4) * 0.05}
               />
             ))}
@@ -143,11 +143,6 @@ export function Catalog() {
         )}
       </div>
 
-      <ProductModal
-        product={selected}
-        whatsappUrl={selected ? whatsappFor(content, selected) : ''}
-        onClose={() => setSelected(null)}
-      />
     </section>
   )
 }

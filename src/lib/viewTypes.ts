@@ -12,6 +12,7 @@ export type ProductView = {
   glyph: Glyph
   imageUrl?: string
   images: string[]
+  relatedIds: string[]
   description?: string
   isBestseller: boolean
   stockQuantity: number

@@ -7,6 +7,18 @@
 // seed rodava a cada deploy e apagava todas as edições).
 export const CONTENT_DEFAULTS = {
   // Barra de avisos (topo)
+  'nav.line_semijoia': 'Semijoia',
+  'nav.line_joias': 'Joias',
+  'nav.line_moissanite': 'Moissanite',
+  'nav.line_noiva': 'Noiva',
+  'nav.collections': 'Coleções',
+  'nav.bestsellers': 'Mais vendidos',
+  'nav.catalog': 'Catálogo',
+  'nav.about': 'Nossa história',
+  'nav.contact': 'Contato',
+  'product.related_title': 'Você também vai gostar',
+  'product.copy_link': 'Copiar link do produto',
+  'product.link_copied': 'Link copiado!',
   'announcement.text': 'Até 6x sem juros · 5% off no Pix · Frete para todo o Brasil',
 
   // Hero — carrossel de fotos de fundo (até 4 slides; slide sem imagem não aparece)

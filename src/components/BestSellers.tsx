@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { ProductCard } from './ProductCard'
-import { ProductModal } from './ProductModal'
+import { useProductViewer } from '../context/ProductViewerContext'
 import { useSiteData } from '../context/SiteDataContext'
 import { buildWhatsappUrl } from '../data/site'
 import type { ProductView } from '../lib/viewTypes'
@@ -21,7 +20,7 @@ export function BestSellers() {
   // mostra o catálogo geral em vez de deixar a seção vazia.
   const bestsellers = allProducts.filter((p) => p.isBestseller)
   const products = bestsellers.length > 0 ? bestsellers : allProducts
-  const [selected, setSelected] = useState<ProductView | null>(null)
+  const { open: openProduct } = useProductViewer()
 
   return (
     <section id="mais-vendidos" className="bg-ivory px-6 py-20 text-ink lg:px-12 lg:py-28">
@@ -49,7 +48,7 @@ export function BestSellers() {
               key={p.id}
               product={p}
               whatsappUrl={whatsappFor(content, p)}
-              onSelect={setSelected}
+              onSelect={openProduct}
               delay={(i % 4) * 0.07}
             />
           ))}
@@ -62,11 +61,6 @@ export function BestSellers() {
         )}
       </div>
 
-      <ProductModal
-        product={selected}
-        whatsappUrl={selected ? whatsappFor(content, selected) : ''}
-        onClose={() => setSelected(null)}
-      />
     </section>
   )
 }

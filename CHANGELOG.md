@@ -4,6 +4,16 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-11-03
+
+### Added
+- **Link direto do produto**: botão discreto (ícone de corrente) no modal copia `…/?produto=<id>`; abrir o link já mostra a tela do produto. O modal agora é único para o site todo e sincroniza com a URL (botão voltar fecha).
+- **"Você também vai gostar"**: sugestões no modal do produto. Escolha manual no admin (Produtos → "Produtos relacionados", até 8, campo `relatedIds`); sem escolha, sugere automático por tipo de peça, linha e faixa de preço.
+- Nomes do menu (Semijoia/Joias/Moissanite/Noiva e Coleções/Mais vendidos/Catálogo/Nossa história/Contato) editáveis em Textos do site → "Menu (nomes dos itens)".
+
+### Fixed
+- Admin "Textos do site": fotos agora são salvas e publicadas na hora do upload (antes dependiam do botão "Salvar alterações" lá no topo, então o carrossel do início parecia não mudar); barra de salvar fixa no topo, aviso de alterações não salvas e correção de edição que podia sobrescrever outros campos durante o upload.
+
 ## 2026-10-16
 
 ### Changed

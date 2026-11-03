@@ -14,6 +14,7 @@ type ApiProduct = {
   badge: string
   imageUrl: string
   images: string[]
+  relatedIds?: string[]
   description: string
   isBestseller: boolean
   stockQuantity: number
@@ -47,6 +48,7 @@ const FALLBACK_PRODUCTS: ProductView[] = defaultProducts.map((p) => ({
   badge: p.badge,
   glyph: p.glyph,
   images: [],
+  relatedIds: [],
   isBestseller: true,
   stockQuantity: 99,
   isLowStock: false,
@@ -100,6 +102,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
             glyph: cat?.glyph || 'ring',
             imageUrl: p.imageUrl || undefined,
             images: Array.isArray(p.images) && p.images.length > 0 ? p.images : p.imageUrl ? [p.imageUrl] : [],
+            relatedIds: Array.isArray(p.relatedIds) ? p.relatedIds : [],
             description: p.description || undefined,
             isBestseller: !!p.isBestseller,
             stockQuantity: p.stockQuantity ?? 0,

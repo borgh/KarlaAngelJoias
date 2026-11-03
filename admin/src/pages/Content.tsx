@@ -31,6 +31,15 @@ const HERO_SLIDE = (n: number, obrigatorio: boolean): Field[] => [
 const FIELDS: Field[] = [
   { key: 'announcement.text', label: 'Barra de avisos (topo do site)', group: 'Topo' },
   { key: 'hero.whatsapp_label', label: 'Texto do botão de WhatsApp no início', group: 'Topo' },
+  { key: 'nav.line_semijoia', label: 'Linha 1 (Semijoia)', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.line_joias', label: 'Linha 2 (Joias)', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.line_moissanite', label: 'Linha 3 (Moissanite)', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.line_noiva', label: 'Linha 4 (Noiva)', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.collections', label: 'Menu — Coleções', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.bestsellers', label: 'Menu — Mais vendidos', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.catalog', label: 'Menu — Catálogo', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.about', label: 'Menu — Nossa história', group: 'Menu (nomes dos itens)' },
+  { key: 'nav.contact', label: 'Menu — Contato', group: 'Menu (nomes dos itens)' },
 
   ...HERO_SLIDE(1, true),
   ...HERO_SLIDE(2, false),
@@ -90,6 +99,7 @@ const FIELDS: Field[] = [
   { key: 'footer.description', label: 'Descrição curta', group: 'Rodapé', multiline: true },
   { key: 'footer.legal', label: 'Linha legal (CNPJ etc.)', group: 'Rodapé' },
 
+  { key: 'product.related_title', label: 'Título das sugestões ('+'"Você também vai gostar")', group: 'Produtos' },
   { key: 'product.buy_label', label: 'Texto do botão de compra', group: 'Produtos' },
   { key: 'product.default_description', label: 'Descrição padrão (quando o produto não tem descrição)', group: 'Produtos', multiline: true },
 
@@ -106,6 +116,7 @@ export default function Content() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [dirty, setDirty] = useState(false)
 
   useEffect(() => {
     api.get<{ content: Record<string, string> }>('/api/site-content').then((data) => {
@@ -114,11 +125,43 @@ export default function Content() {
     })
   }, [])
 
+  // Avisa ao tentar fechar a aba com alterações não salvas.
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty])
+
+  function setField(key: string, value: string) {
+    setValues((prev) => ({ ...prev, [key]: value }))
+    setDirty(true)
+    setMessage('')
+  }
+
+  // Fotos são salvas na hora (upload + gravação), para nunca ficarem
+  // "enviadas mas não publicadas".
+  async function setImage(key: string, url: string) {
+    setValues((prev) => ({ ...prev, [key]: url }))
+    setMessage('')
+    try {
+      await api.put('/api/site-content/admin', { updates: { [key]: url } })
+      setMessage('Foto salva e publicada no site.')
+    } catch (err) {
+      setDirty(true)
+      setMessage(err instanceof ApiError ? err.message : 'Erro ao salvar a foto.')
+    }
+  }
+
   async function handleSave() {
     setSaving(true)
     setMessage('')
     try {
       await api.put('/api/site-content/admin', { updates: values })
+      setDirty(false)
       setMessage('Alterações salvas com sucesso.')
     } catch (err) {
       setMessage(err instanceof ApiError ? err.message : 'Erro ao salvar.')
@@ -133,7 +176,7 @@ export default function Content() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="sticky top-0 z-20 -mx-2 mb-6 flex items-center justify-between gap-4 bg-ivory/95 px-2 py-3 backdrop-blur">
         <div>
           <h1 className="font-display text-3xl text-ink">Textos do site</h1>
           <p className="mt-1 text-sm text-ink/55">Edite textos e fotos de todas as seções do site público, na ordem em que aparecem.</p>
@@ -144,12 +187,15 @@ export default function Content() {
             disabled={saving}
             className="rounded-full bg-gold px-6 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-ink hover:bg-gold-bright disabled:opacity-50"
           >
-            {saving ? 'Salvando…' : 'Salvar alterações'}
+            {saving ? 'Salvando…' : dirty ? 'Salvar alterações •' : 'Salvar alterações'}
           </button>
         )}
       </div>
 
-      {message && <p className="mb-6 rounded-lg bg-ink/5 px-4 py-2.5 text-[13px] text-ink">{message}</p>}
+      {message && <p className="sticky top-[76px] z-20 mb-6 rounded-lg bg-ink px-4 py-2.5 text-[13px] text-ivory shadow">{message}</p>}
+      {dirty && !message && (
+        <p className="mb-6 rounded-lg bg-gold/20 px-4 py-2.5 text-[13px] text-ink">Há alterações de texto ainda não salvas — clique em “Salvar alterações”.</p>
+      )}
 
       <div className="space-y-8">
         {groups.map((group) => (
@@ -162,20 +208,20 @@ export default function Content() {
                     {f.label}
                   </label>
                   {f.image ? (
-                    <ImageUpload value={values[f.key] || ''} onChange={(url) => setValues({ ...values, [f.key]: url })} />
+                    <ImageUpload value={values[f.key] || ''} onChange={(url) => setImage(f.key, url)} />
                   ) : f.multiline ? (
                     <textarea
                       disabled={!user?.canEdit}
                       rows={3}
                       value={values[f.key] || ''}
-                      onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+                      onChange={(e) => setField(f.key, e.target.value)}
                       className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold disabled:bg-ivory-dim"
                     />
                   ) : (
                     <input
                       disabled={!user?.canEdit}
                       value={values[f.key] || ''}
-                      onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+                      onChange={(e) => setField(f.key, e.target.value)}
                       className="w-full rounded-lg border border-ink/15 px-3 py-2 outline-none focus:border-gold disabled:bg-ivory-dim"
                     />
                   )}
