@@ -4,6 +4,13 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-11-16
+
+### Fixed
+- Modal do produto no celular: texto aparecia por cima da foto (iPhone/Safari). O modal agora usa layout em bloco no celular e a foto reserva a altura sem depender de `aspect-ratio` dentro de grid.
+- Carrossel do início: a foto/texto PADRÃO (`/brand/hero-1.jpg`) piscava a cada abertura do site antes do conteúdo do admin chegar. Agora o hero espera o conteúdo real e o site guarda o último conteúdo no navegador (`localStorage`), abrindo já com as fotos atuais.
+- Admin "Textos do site": "Salvar alterações" envia só os campos editados — uma aba antiga do painel não sobrescreve mais fotos/textos trocados depois.
+
 ## 2026-11-03
 
 ### Added

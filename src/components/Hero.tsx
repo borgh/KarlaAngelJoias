@@ -32,14 +32,19 @@ function slidesFromContent(content: Record<string, string>): Slide[] {
 const INTERVAL_MS = 6500
 
 export function Hero() {
-  const { content } = useSiteData()
+  const { content, contentReady } = useSiteData()
   const whatsappUrl = buildWhatsappUrl(content)
-  const SLIDES = slidesFromContent(content)
+  // Enquanto o conteúdo do admin não chegou, não mostra as fotos padrão
+  // (senão a foto antiga pisca na tela antes de trocar pela atual).
+  const SLIDES = contentReady ? slidesFromContent(content) : []
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const timer = useRef<number | null>(null)
 
   const count = Math.max(SLIDES.length, 1)
+  useEffect(() => {
+    if (index >= count) setIndex(0)
+  }, [index, count])
   const go = useCallback((next: number) => {
     setIndex(((next % count) + count) % count)
   }, [count])
@@ -105,6 +110,7 @@ export function Hero() {
       {/* Texto */}
       <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-6 pb-20 lg:px-12 lg:pb-24">
         <AnimatePresence mode="wait">
+          {SLIDES.length > 0 && (
           <motion.div
             key={slide.src}
             initial={{ opacity: 0, y: 18 }}
@@ -134,6 +140,7 @@ export function Hero() {
               </a>
             </div>
           </motion.div>
+          )}
         </AnimatePresence>
       </div>
 

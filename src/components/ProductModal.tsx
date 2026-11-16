@@ -72,7 +72,7 @@ export function ProductModal({
             transition={{ duration: 0.25, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
             ref={scrollRef}
-            className="grid max-h-[88vh] w-full max-w-3xl grid-cols-1 overflow-y-auto rounded-sm bg-ivory shadow-2xl sm:grid-cols-2"
+            className="block max-h-[88vh] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-sm bg-ivory shadow-2xl sm:grid sm:grid-cols-2"
           >
             <ProductImageCarousel
               images={product.images}

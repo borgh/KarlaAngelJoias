@@ -117,6 +117,9 @@ export default function Content() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [dirty, setDirty] = useState(false)
+  // Chaves editadas nesta tela: só elas são enviadas ao salvar, para uma
+  // aba antiga do painel não sobrescrever fotos/textos trocados depois.
+  const [changed, setChanged] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     api.get<{ content: Record<string, string> }>('/api/site-content').then((data) => {
@@ -138,6 +141,7 @@ export default function Content() {
 
   function setField(key: string, value: string) {
     setValues((prev) => ({ ...prev, [key]: value }))
+    setChanged((prev) => new Set(prev).add(key))
     setDirty(true)
     setMessage('')
   }
@@ -151,6 +155,7 @@ export default function Content() {
       await api.put('/api/site-content/admin', { updates: { [key]: url } })
       setMessage('Foto salva e publicada no site.')
     } catch (err) {
+      setChanged((prev) => new Set(prev).add(key))
       setDirty(true)
       setMessage(err instanceof ApiError ? err.message : 'Erro ao salvar a foto.')
     }
@@ -160,7 +165,9 @@ export default function Content() {
     setSaving(true)
     setMessage('')
     try {
-      await api.put('/api/site-content/admin', { updates: values })
+      const updates = Object.fromEntries([...changed].map((k) => [k, values[k] ?? '']))
+      if (Object.keys(updates).length > 0) await api.put('/api/site-content/admin', { updates })
+      setChanged(new Set())
       setDirty(false)
       setMessage('Alterações salvas com sucesso.')
     } catch (err) {

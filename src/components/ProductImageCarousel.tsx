@@ -39,7 +39,7 @@ export function ProductImageCarousel({
   const hasMultiple = images.length > 1
 
   return (
-    <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-ivory-dim sm:aspect-auto">
+    <div className="relative flex h-0 w-full items-center justify-center overflow-hidden bg-ivory-dim pb-[100%] sm:h-auto sm:min-h-[420px] sm:pb-0">
       {badge && (
         <span className="absolute left-4 top-4 z-10 rounded-full bg-rose px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
           {badge}
@@ -47,7 +47,7 @@ export function ProductImageCarousel({
       )}
 
       {images.length === 0 ? (
-        <JewelGlyph type={glyph} className="h-32 w-32 text-gold" />
+        <JewelGlyph type={glyph} className="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 text-gold" />
       ) : (
         <div className="absolute inset-0 overflow-hidden">
           <AnimatePresence initial={false} custom={direction} mode="popLayout">

@@ -24,6 +24,8 @@ type ApiCarouselItem = { id: string; imageUrl: string; title: string; linkUrl: s
 
 type SiteData = {
   loading: boolean
+  // false enquanto só temos os textos/fotos PADRÃO (primeira visita, antes da API responder)
+  contentReady: boolean
   content: Record<string, string>
   products: ProductView[]
   categories: CategoryView[]
@@ -54,9 +56,26 @@ const FALLBACK_PRODUCTS: ProductView[] = defaultProducts.map((p) => ({
   isLowStock: false,
 }))
 
+const CONTENT_CACHE_KEY = 'ka.siteContent.v1'
+function readCachedContent(): Record<string, string> | null {
+  try {
+    const raw = localStorage.getItem(CONTENT_CACHE_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
 export function SiteDataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
-  const [content, setContent] = useState<Record<string, string>>(DEFAULT_CONTENT)
+  // Textos/fotos da última visita ficam guardados no navegador: o site
+  // abre direto com o conteúdo real do admin, sem piscar o padrão antigo.
+  const [cached] = useState(readCachedContent)
+  const [content, setContent] = useState<Record<string, string>>(
+    cached ? { ...DEFAULT_CONTENT, ...cached } : DEFAULT_CONTENT
+  )
+  const [contentReady, setContentReady] = useState(!!cached)
   const [products, setProducts] = useState<ProductView[]>(FALLBACK_PRODUCTS)
   const [categories, setCategories] = useState<CategoryView[]>(FALLBACK_CATEGORIES)
   const [instagramItems, setInstagramItems] = useState<InstagramItemView[]>([])
@@ -72,7 +91,13 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
 
       if (contentRes?.content && Object.keys(contentRes.content).length > 0) {
         setContent({ ...DEFAULT_CONTENT, ...contentRes.content })
+        try {
+          localStorage.setItem(CONTENT_CACHE_KEY, JSON.stringify(contentRes.content))
+        } catch {
+          /* navegação privada / armazenamento cheio: segue sem cache */
+        }
       }
+      setContentReady(true)
 
       let categoryMap = new Map<string, CategoryView>()
       if (categoriesRes?.categories && categoriesRes.categories.length > 0) {
@@ -126,7 +151,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <SiteDataContext.Provider value={{ loading, content, products, categories, instagramItems }}>
+    <SiteDataContext.Provider value={{ loading, contentReady, content, products, categories, instagramItems }}>
       {children}
     </SiteDataContext.Provider>
   )
