@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 import { store, nowIso } from '../db/store.js'
 import { requireAuth, requirePermission } from '../auth.js'
 import { checkAndNotifyLowStock, sendEmailAlert, sendWhatsAppAlert } from '../services/notify.js'
-import { createOrder, getOrder, verifyWebhookSignature, isPaymentConfigured, getPublicPaymentInfo } from '../services/mercadopago.js'
+import { createOrder, getOrder, findOrderByReference, verifyWebhookSignature, isPaymentConfigured, getPublicPaymentInfo } from '../services/mercadopago.js'
 
 export const ordersRouter = Router()
 
@@ -252,9 +252,12 @@ function friendlyMpError(err) {
 ordersRouter.post('/webhook/mercadopago', async (req, res) => {
   // Responde 200 rápido pro MP não ficar reenviando, mesmo que a
   // assinatura falhe — só não processa nada nesse caso.
+  // Assinatura inválida (ex.: chave secreta do modo teste com conta em
+  // produção) NÃO bloqueia mais: o status nunca vem do corpo da
+  // notificação, sempre de uma consulta autenticada ao MP logo abaixo —
+  // então processar uma notificação falsa só gera uma consulta a mais.
   if (!verifyWebhookSignature(req)) {
-    console.warn('Webhook do Mercado Pago com assinatura inválida — ignorado.')
-    return res.sendStatus(200)
+    console.warn('Webhook do Mercado Pago com assinatura inválida — conferindo direto no MP mesmo assim. Revise a chave secreta em Pagamentos.')
   }
 
   const dataId = req.query['data.id'] || req.query.data_id || req.body?.data?.id
@@ -285,15 +288,72 @@ ordersRouter.post('/webhook/mercadopago', async (req, res) => {
 ordersRouter.post('/admin/:id/sync', requireAuth, requirePermission('canEdit'), async (req, res) => {
   const order = store.orders.find((o) => o.id === req.params.id)
   if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' })
-  if (!order.mpPaymentId) return res.status(409).json({ error: 'Esse pedido ainda não tem pagamento no Mercado Pago.' })
-
   try {
-    const result = await getOrder(order.mpPaymentId)
-    const { updated, justApproved } = applyMpResult(order, result)
-    if (justApproved) await settleStockAndNotify(updated)
-    res.json({ order: serializeAdminOrder(updated), mpStatus: result.rawStatus })
+    const { order: updated } = await syncOrderWithMp(order)
+    if (!updated.mpPaymentId) return res.status(409).json({ error: 'Não há pagamento desse pedido no Mercado Pago.' })
+    res.json({ order: serializeAdminOrder(updated) })
   } catch (err) {
     console.error('Erro ao sincronizar pedido com o Mercado Pago:', err.message)
+    res.status(502).json({ error: 'Não foi possível consultar o Mercado Pago agora.' })
+  }
+})
+
+// Consulta o MP e aplica o resultado a um pedido. Usado pela conferência
+// automática e pelo botão "atualizar pendentes" do admin.
+async function syncOrderWithMp(order) {
+  const result = order.mpPaymentId ? await getOrder(order.mpPaymentId) : await findOrderByReference(order.id)
+  if (!result) return { order, changed: false }
+  const before = order.status
+  const { updated, justApproved } = applyMpResult(order, result)
+  if (justApproved) await settleStockAndNotify(updated)
+  return { order: updated, changed: updated.status !== before }
+}
+
+const SYNC_WINDOW_DAYS = 15
+async function syncPendingOrders() {
+  const since = Date.now() - SYNC_WINDOW_DAYS * 86400000
+  const pending = store.orders.filter(
+    (o) => o.status === 'pending_payment' && new Date(o.createdAt).getTime() >= since
+  )
+  let updatedCount = 0
+  for (const o of pending) {
+    try {
+      const { changed } = await syncOrderWithMp(o)
+      if (changed) updatedCount++
+    } catch (err) {
+      console.warn(`Conferência MP do pedido ${o.number}: ${err.message}`)
+    }
+  }
+  return { checked: pending.length, updated: updatedCount }
+}
+
+// Conferência automática: a cada 3 min revisa pedidos "aguardando
+// pagamento" dos últimos dias direto no MP. Assim o pedido vira "pago"
+// mesmo se o webhook não chegar (painel do MP sem webhook em produção,
+// chave secreta errada, servidor fora do ar na hora da notificação…).
+let syncRunning = false
+export function startPaymentReconciler() {
+  const run = async () => {
+    if (syncRunning || !isPaymentConfigured()) return
+    syncRunning = true
+    try {
+      const r = await syncPendingOrders()
+      if (r.updated > 0) console.log(`✅ Conferência MP: ${r.updated} de ${r.checked} pedido(s) pendente(s) atualizado(s).`)
+    } catch (err) {
+      console.error('Falha na conferência automática com o MP:', err.message)
+    } finally {
+      syncRunning = false
+    }
+  }
+  setTimeout(run, 15_000)
+  setInterval(run, 3 * 60_000)
+}
+
+ordersRouter.post('/admin/sync-pending', requireAuth, requirePermission('canEdit'), async (req, res) => {
+  if (!isPaymentConfigured()) return res.status(409).json({ error: 'Mercado Pago não configurado.' })
+  try {
+    res.json(await syncPendingOrders())
+  } catch (err) {
     res.status(502).json({ error: 'Não foi possível consultar o Mercado Pago agora.' })
   }
 })

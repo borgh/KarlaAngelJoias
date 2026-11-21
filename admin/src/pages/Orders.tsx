@@ -47,6 +47,26 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Order | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
+
+  async function syncPending() {
+    setSyncing(true)
+    setSyncMsg('')
+    try {
+      const r = await api.post<{ checked: number; updated: number }>('/api/orders/admin/sync-pending')
+      setSyncMsg(
+        r.updated > 0
+          ? `${r.updated} pedido(s) atualizado(s) de ${r.checked} pendente(s).`
+          : `Conferido no Mercado Pago: nenhum dos ${r.checked} pendente(s) mudou.`
+      )
+      await load()
+    } catch (err) {
+      setSyncMsg(err instanceof Error ? err.message : 'Erro ao consultar o Mercado Pago.')
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   async function load() {
     try {
@@ -79,6 +99,14 @@ export default function Orders() {
             {statusFilter !== 'all' || search ? ' (filtrado)' : ''} · {formatBRL(revenue)} em vendas confirmadas
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={syncPending}
+          disabled={syncing}
+          className="rounded-full border border-ink/15 bg-white px-4 py-2 text-[12px] font-medium text-ink/70 transition-colors hover:bg-ink/5 disabled:opacity-50"
+        >
+          {syncing ? 'Conferindo…' : 'Atualizar pendentes com o Mercado Pago'}
+        </button>
         <div className="relative">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" />
           <input
@@ -88,7 +116,9 @@ export default function Orders() {
             className="w-72 rounded-full border border-ink/15 py-2 pl-9 pr-4 text-sm outline-none focus:border-gold"
           />
         </div>
+        </div>
       </div>
+      {syncMsg && <p className="mb-4 rounded-lg bg-ink/5 px-4 py-2.5 text-[13px] text-ink">{syncMsg}</p>}
 
       <div className="mb-5 flex flex-wrap gap-2">
         {(['all', ...Object.keys(STATUS_LABEL)] as const).map((s) => (

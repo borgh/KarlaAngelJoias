@@ -279,6 +279,20 @@ async function recoverRejectedOrder(errorBody, externalReference) {
   }
 }
 
+// Busca a order mais recente do MP pela nossa referência (id do pedido).
+// Usado quando o pedido não guardou o id da order (ex.: falha de rede
+// logo depois de criar o pagamento).
+export async function findOrderByReference(externalReference) {
+  const search = await mpRequest(
+    'GET',
+    `/v1/orders/search?external_reference=${encodeURIComponent(externalReference)}&limit=5`
+  )
+  const list = (search?.results || search?.elements || search?.data || []).sort((a, b) =>
+    String(b.created_date || '').localeCompare(String(a.created_date || ''))
+  )
+  return list[0] ? summarizeOrder(list[0]) : null
+}
+
 export async function getOrder(mpOrderId) {
   const response = await mpRequest('GET', `/v1/orders/${encodeURIComponent(mpOrderId)}`)
   return summarizeOrder(response)

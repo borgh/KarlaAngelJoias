@@ -14,7 +14,7 @@ import { usersRouter } from './routes/users.js'
 import { uploadRouter, UPLOAD_DIR } from './routes/upload.js'
 import { settingsRouter } from './routes/settings.js'
 import { pushRouter } from './routes/push.js'
-import { ordersRouter } from './routes/orders.js'
+import { ordersRouter, startPaymentReconciler } from './routes/orders.js'
 import { ensureVapidKeys } from './services/notify.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -68,6 +68,7 @@ app.use((err, req, res, next) => {
 })
 
 ensureVapidKeys()
+startPaymentReconciler()
 
 app.listen(PORT, () => {
   console.log(`API Karla Angel Joias rodando na porta ${PORT}`)

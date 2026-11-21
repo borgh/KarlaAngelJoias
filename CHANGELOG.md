@@ -4,6 +4,15 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-11-21
+
+### Fixed
+- Pedidos pagos ficavam em "Aguardando pagamento" quando a notificação (webhook) do Mercado Pago não chegava ou falhava na assinatura. Agora a API confere sozinha, a cada 3 minutos, os pedidos pendentes dos últimos 15 dias direto no Mercado Pago (pela order salva ou, se faltar, pela referência do pedido) e marca como pago, debitando estoque e avisando uma única vez.
+- Webhook com assinatura inválida não é mais descartado: o status é sempre reconsultado no MP, então só gera uma consulta a mais.
+
+### Added
+- Admin → Pedidos: botão "Atualizar pendentes com o Mercado Pago" (endpoint `POST /api/orders/admin/sync-pending`).
+
 ## 2026-11-16
 
 ### Fixed
