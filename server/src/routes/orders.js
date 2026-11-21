@@ -301,7 +301,17 @@ ordersRouter.post('/admin/:id/sync', requireAuth, requirePermission('canEdit'), 
 // Consulta o MP e aplica o resultado a um pedido. Usado pela conferência
 // automática e pelo botão "atualizar pendentes" do admin.
 async function syncOrderWithMp(order) {
-  const result = order.mpPaymentId ? await getOrder(order.mpPaymentId) : await findOrderByReference(order.id)
+  let result = order.mpPaymentId ? await getOrder(order.mpPaymentId) : null
+  // A tentativa salva não está paga? Procura entre todas as tentativas
+  // desse pedido no MP (o pagamento pode ter caído numa anterior).
+  if (!result || result.status !== 'approved') {
+    try {
+      const byRef = await findOrderByReference(order.id)
+      if (byRef && (byRef.status === 'approved' || !result)) result = byRef
+    } catch (err) {
+      if (!result) throw err
+    }
+  }
   if (!result) return { order, changed: false }
   const before = order.status
   const { updated, justApproved } = applyMpResult(order, result)

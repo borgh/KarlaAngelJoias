@@ -11,6 +11,8 @@ Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto d
 - Webhook com assinatura inválida não é mais descartado: o status é sempre reconsultado no MP, então só gera uma consulta a mais.
 
 ### Added
+- Admin → Pedidos no celular/PWA: lista em cartões (nº, cliente, total, status, data) no lugar da tabela que não rolava de lado; filtros de status com rolagem horizontal.
+- Conferência com o MP olha todas as tentativas de pagamento do pedido (cliente que gerou dois Pix e pagou o primeiro agora é reconhecido).
 - Admin → Pedidos: botão "Atualizar pendentes com o Mercado Pago" (endpoint `POST /api/orders/admin/sync-pending`).
 
 ## 2026-11-16

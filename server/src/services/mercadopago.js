@@ -285,12 +285,16 @@ async function recoverRejectedOrder(errorBody, externalReference) {
 export async function findOrderByReference(externalReference) {
   const search = await mpRequest(
     'GET',
-    `/v1/orders/search?external_reference=${encodeURIComponent(externalReference)}&limit=5`
+    `/v1/orders/search?external_reference=${encodeURIComponent(externalReference)}&limit=20`
   )
   const list = (search?.results || search?.elements || search?.data || []).sort((a, b) =>
     String(b.created_date || '').localeCompare(String(a.created_date || ''))
   )
-  return list[0] ? summarizeOrder(list[0]) : null
+  // Cliente pode ter tentado pagar mais de uma vez (ex.: gerou dois Pix):
+  // se alguma tentativa foi paga, é essa que vale.
+  const paid = list.find((o) => String(o.status || '').toLowerCase() === 'processed')
+  const chosen = paid || list[0]
+  return chosen ? summarizeOrder(chosen) : null
 }
 
 export async function getOrder(mpOrderId) {

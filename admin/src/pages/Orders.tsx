@@ -99,7 +99,7 @@ export default function Orders() {
             {statusFilter !== 'all' || search ? ' (filtrado)' : ''} · {formatBRL(revenue)} em vendas confirmadas
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
         <button
           onClick={syncPending}
           disabled={syncing}
@@ -107,25 +107,25 @@ export default function Orders() {
         >
           {syncing ? 'Conferindo…' : 'Atualizar pendentes com o Mercado Pago'}
         </button>
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nº, nome, e-mail ou telefone"
-            className="w-72 rounded-full border border-ink/15 py-2 pl-9 pr-4 text-sm outline-none focus:border-gold"
+            className="w-full rounded-full border border-ink/15 py-2 pl-9 sm:w-72 pr-4 text-sm outline-none focus:border-gold"
           />
         </div>
         </div>
       </div>
       {syncMsg && <p className="mb-4 rounded-lg bg-ink/5 px-4 py-2.5 text-[13px] text-ink">{syncMsg}</p>}
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
         {(['all', ...Object.keys(STATUS_LABEL)] as const).map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
               statusFilter === s ? 'bg-ink text-ivory' : 'bg-white text-ink/60 hover:bg-ink/5'
             }`}
           >
@@ -143,7 +143,35 @@ export default function Orders() {
             <p className="text-sm text-ink/50">Nenhum pedido {statusFilter !== 'all' || search ? 'encontrado' : 'ainda'}.</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <>
+          {/* Celular: cartões (a tabela não cabe e não rola de lado no PWA) */}
+          <ul className="divide-y divide-ink/5 md:hidden">
+            {orders.map((o) => {
+              const Icon = STATUS_ICON[o.status]
+              return (
+                <li key={o.id}>
+                  <button onClick={() => setSelected(o)} className="block w-full px-4 py-3.5 text-left active:bg-ivory-dim/60">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-ink">{o.number}</p>
+                        <p className="truncate text-[13px] text-ink/65">{o.customer.name}</p>
+                      </div>
+                      <p className="shrink-0 text-sm font-medium text-gold-deep">{formatBRL(o.totalCents)}</p>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_STYLE[o.status]}`}>
+                        <Icon size={12} /> {STATUS_LABEL[o.status]}
+                      </span>
+                      <span className="text-[12px] text-ink/45">
+                        {o.items.reduce((s, i) => s + i.quantity, 0)} un. · {formatDate(o.createdAt)}
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <table className="hidden w-full text-left text-sm md:table">
             <thead className="border-b border-ink/10 text-[11px] uppercase tracking-wide text-ink/40">
               <tr>
                 <th className="px-5 py-3">Pedido</th>
@@ -174,6 +202,7 @@ export default function Orders() {
               })}
             </tbody>
           </table>
+          </>
         )}
       </div>
 
