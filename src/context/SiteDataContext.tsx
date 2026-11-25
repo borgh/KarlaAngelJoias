@@ -15,6 +15,7 @@ type ApiProduct = {
   imageUrl: string
   images: string[]
   relatedIds?: string[]
+  videos?: { url: string; poster?: string }[]
   description: string
   isBestseller: boolean
   stockQuantity: number
@@ -51,6 +52,7 @@ const FALLBACK_PRODUCTS: ProductView[] = defaultProducts.map((p) => ({
   glyph: p.glyph,
   images: [],
   relatedIds: [],
+  videos: [],
   isBestseller: true,
   stockQuantity: 99,
   isLowStock: false,
@@ -128,6 +130,9 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
             imageUrl: p.imageUrl || undefined,
             images: Array.isArray(p.images) && p.images.length > 0 ? p.images : p.imageUrl ? [p.imageUrl] : [],
             relatedIds: Array.isArray(p.relatedIds) ? p.relatedIds : [],
+            videos: Array.isArray(p.videos)
+              ? p.videos.filter((v) => v && v.url).map((v) => ({ url: v.url, poster: v.poster || '' }))
+              : [],
             description: p.description || undefined,
             isBestseller: !!p.isBestseller,
             stockQuantity: p.stockQuantity ?? 0,

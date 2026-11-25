@@ -4,6 +4,15 @@ Histórico de mudanças do Karla Angel Joias, gerado a partir do histórico real
 
 Da fundação do projeto (29/07/2026) até hoje. Cada entrada tem o hash curto do commit entre colchetes.
 
+## 2026-11-25
+
+### Added
+- **Vídeos nos produtos**: até 3 vídeos por produto (Admin → Produtos → "Vídeos"), com barra de progresso no envio. A API converte qualquer vídeo de celular (inclusive .mov/HEVC do iPhone) com ffmpeg para MP4 H.264 de até 1280px com "faststart" e gera a capa (.jpg). No site, os vídeos aparecem no carrossel do produto depois das fotos (tocam sem som em loop, com botão de som) e o card mostra o selo "Vídeo".
+- Endpoint `POST /api/upload/video` (até 150 MB); campo `videos: [{ url, poster }]` no produto.
+
+### Infra
+- Imagem da API agora inclui ffmpeg. Nginx do admin aceita uploads de até 160 MB e espera até 6 min pela API; kamal-proxy do admin com `--target-timeout 360s`.
+
 ## 2026-11-21
 
 ### Fixed

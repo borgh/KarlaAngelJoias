@@ -30,6 +30,7 @@ docker exec kamal-proxy kamal-proxy deploy "$SERVICE_NAME" \
   --target "${CONTAINER_NAME}:80" \
   --host "$HOST" \
   --health-check-path /up \
+  --target-timeout 360s \
   --tls
 
 echo "==> Limpando containers antigos do admin"

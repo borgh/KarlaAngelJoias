@@ -76,6 +76,7 @@ export function ProductModal({
           >
             <ProductImageCarousel
               images={product.images}
+              videos={product.videos}
               glyph={product.glyph}
               alt={product.name}
               seed={product.id}

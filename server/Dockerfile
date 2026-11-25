@@ -8,6 +8,11 @@
 # deste painel (catálogo de uma loja), isso é mais que suficiente.
 FROM node:20-bookworm-slim
 
+# ffmpeg converte os vídeos de produto (ex.: .mov HEVC do iPhone) para
+# MP4 H.264, que toca em qualquer navegador, e gera a capa do vídeo.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev

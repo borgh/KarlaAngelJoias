@@ -1,3 +1,5 @@
+export type ProductVideo = { url: string; poster: string }
+
 import type { ProductLine } from './lines'
 
 export type Glyph = 'ring' | 'necklace' | 'earring' | 'bracelet'
@@ -13,6 +15,7 @@ export type ProductView = {
   imageUrl?: string
   images: string[]
   relatedIds: string[]
+  videos: ProductVideo[]
   description?: string
   isBestseller: boolean
   stockQuantity: number

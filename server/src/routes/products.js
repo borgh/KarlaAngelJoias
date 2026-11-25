@@ -25,6 +25,17 @@ function sanitizeImages(images) {
   return images.filter((url) => typeof url === 'string' && url.trim() !== '').slice(0, MAX_PRODUCT_IMAGES)
 }
 
+// Vídeos do produto: até 3, cada um { url, poster } apontando pra /uploads.
+const MAX_PRODUCT_VIDEOS = 3
+function sanitizeVideos(videos) {
+  if (!Array.isArray(videos)) return []
+  return videos
+    .map((v) => (typeof v === 'string' ? { url: v, poster: '' } : v))
+    .filter((v) => v && typeof v.url === 'string' && v.url.startsWith('/uploads/'))
+    .map((v) => ({ url: v.url, poster: typeof v.poster === 'string' && v.poster.startsWith('/uploads/') ? v.poster : '' }))
+    .slice(0, MAX_PRODUCT_VIDEOS)
+}
+
 // Produtos relacionados escolhidos à mão (até 8 ids de produtos distintos).
 // Se vazio, o site sugere automaticamente os mais parecidos.
 const MAX_RELATED = 8
@@ -54,6 +65,7 @@ function serializePublic(row) {
     description: row.description,
     line: row.line ?? null,
     relatedIds: Array.isArray(row.relatedIds) ? row.relatedIds : [],
+    videos: Array.isArray(row.videos) ? row.videos : [],
     images,
     imageUrl: images[0] || '', // compatibilidade: quem ainda ler só imageUrl continua funcionando
     isBestseller: row.isBestseller,
@@ -99,6 +111,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     line,
     imageUrl,
     images,
+    videos,
     relatedIds,
     isBestseller,
     sortOrder,
@@ -122,6 +135,7 @@ productsRouter.post('/admin', requireAuth, requirePermission('canCreate'), (req,
     line: sanitizeLine(line),
     imageUrl: sanitizedImages[0] || '',
     images: sanitizedImages,
+    videos: sanitizeVideos(videos),
     relatedIds: sanitizeRelated(relatedIds, newId),
     isBestseller: !!isBestseller,
     isActive: true,
@@ -150,6 +164,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     line,
     imageUrl,
     images,
+    videos,
     relatedIds,
     isBestseller,
     isActive,
@@ -171,6 +186,7 @@ productsRouter.put('/admin/:id', requireAuth, requirePermission('canEdit'), (req
     line: line !== undefined ? sanitizeLine(line) : (existing.line ?? null),
     images: sanitizedImages ?? existing.images ?? [],
     imageUrl: (sanitizedImages ?? existing.images ?? [])[0] || '',
+    videos: videos !== undefined ? sanitizeVideos(videos) : (existing.videos ?? []),
     relatedIds: relatedIds !== undefined ? sanitizeRelated(relatedIds, existing.id) : (existing.relatedIds ?? []),
     isBestseller: isBestseller !== undefined ? !!isBestseller : existing.isBestseller,
     isActive: isActive !== undefined ? !!isActive : existing.isActive,

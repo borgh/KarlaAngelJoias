@@ -1,4 +1,4 @@
-import { Images, ShoppingBag, MessageCircle } from 'lucide-react'
+import { Images, ShoppingBag, MessageCircle, Play } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { JewelGlyph } from './JewelGlyph'
 import { Sparkles, Shimmer } from './Sparkles'
@@ -64,9 +64,18 @@ export function ProductCard({
             menos frequência e intercalado com as estrelas. */}
         <Shimmer seed={product.id} />
         <Sparkles seed={product.id} count={4} />
-        {product.images.length > 1 && (
-          <span className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-white/85 px-2 py-1 text-[10px] font-semibold text-ink backdrop-blur-sm">
-            <Images size={11} /> {product.images.length}
+        {(product.images.length > 1 || product.videos.length > 0) && (
+          <span className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 text-[10px] font-semibold text-ink backdrop-blur-sm">
+            {product.images.length > 1 && (
+              <span className="flex items-center gap-1">
+                <Images size={11} /> {product.images.length}
+              </span>
+            )}
+            {product.videos.length > 0 && (
+              <span className="flex items-center gap-1" aria-label="Tem vídeo">
+                <Play size={10} fill="currentColor" /> Vídeo
+              </span>
+            )}
           </span>
         )}
         <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[11px] font-semibold uppercase tracking-[0.16em] text-white opacity-0 transition-all duration-300 group-hover:bg-ink/35 group-hover:opacity-100 group-hover:backdrop-blur-[1px]">

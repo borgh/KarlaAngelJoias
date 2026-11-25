@@ -4,11 +4,12 @@ import { api, ApiError } from '../lib/api'
 import { PRODUCT_LINES } from '../lib/types'
 import type { Product, Category } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
+import { VideoGalleryUpload } from '../components/VideoGalleryUpload'
 import { ImageGalleryUpload } from '../components/ImageGalleryUpload'
 
 type ProductFormFields = Pick<
   Product,
-  'name' | 'categoryId' | 'line' | 'price' | 'badge' | 'description' | 'images' | 'relatedIds' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
+  'name' | 'categoryId' | 'line' | 'price' | 'badge' | 'description' | 'images' | 'videos' | 'relatedIds' | 'isBestseller' | 'isActive' | 'sortOrder' | 'stockQuantity'
 >
 
 const EMPTY_FORM: ProductFormFields = {
@@ -19,6 +20,7 @@ const EMPTY_FORM: ProductFormFields = {
   badge: '',
   description: '',
   images: [],
+  videos: [],
   relatedIds: [],
   isBestseller: false,
   isActive: true,
@@ -74,6 +76,7 @@ export default function Products() {
       description: p.description,
       line: p.line ?? null,
       images: p.images ?? (p.imageUrl ? [p.imageUrl] : []),
+      videos: p.videos ?? [],
       relatedIds: p.relatedIds ?? [],
       isBestseller: p.isBestseller,
       isActive: p.isActive,
@@ -224,6 +227,13 @@ export default function Products() {
                   Fotos
                 </label>
                 <ImageGalleryUpload images={form.images} onChange={(images) => setForm({ ...form, images })} />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-ink/50">
+                  Vídeos
+                </label>
+                <VideoGalleryUpload videos={form.videos ?? []} onChange={(videos) => setForm({ ...form, videos })} />
               </div>
 
               <div>

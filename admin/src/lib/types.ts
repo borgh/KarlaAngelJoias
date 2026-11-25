@@ -42,6 +42,7 @@ export type Product = {
   imageUrl: string
   images: string[]
   relatedIds?: string[]
+  videos?: { url: string; poster: string }[]
   isBestseller: boolean
   isActive: boolean
   sortOrder: number
